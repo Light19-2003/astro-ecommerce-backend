@@ -1,5 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
+import cros from "cors";
 
 import auth from "./router/auth.routes.js";
 
@@ -16,6 +17,11 @@ db();
 const app = express();
 
 app.use(express.json());
+app.use(
+  cros({
+    origin: "*",
+  }),
+);
 app.use("/uploads", express.static("uploads"));
 
 app.use("/api/test", auth);
