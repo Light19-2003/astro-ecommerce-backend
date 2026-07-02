@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { type } from "node:os";
 
 const UserSchema = new mongoose.Schema(
   {
@@ -21,10 +22,13 @@ const UserSchema = new mongoose.Schema(
       required: true,
     },
     Resettoken: String,
+
+    isVerified: Boolean,
+    isActive: Boolean,
   },
   {
     timestamps: true,
   },
 );
 
-export default mongoose.model("UserModel", UserSchema);
+export default mongoose.model("UserAuthenticationModel", UserSchema);

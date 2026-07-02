@@ -2,10 +2,10 @@ import expres from "express";
 
 import image from "../middlewere/image.middlewere.js";
 import {
-  UserProfile,
   GetProfile,
-  UpdateProfile,
+  UserProfileController,
   SingleFieldProfileUpdate,
+  UpdateProfile,
 } from "../controller/profile.controller.js";
 import { TokenVerify } from "../middlewere/auth.middlewere.js";
 
@@ -17,7 +17,7 @@ routes.post(
   "/create-profile",
   TokenVerify,
   image.single("User_image"),
-  UserProfile,
+  UserProfileController,
 );
 
 //  get profile
@@ -28,7 +28,7 @@ routes.get("/get-profile", TokenVerify, GetProfile);
 
 routes.put(
   "/update-profile",
-  TokenVerify, 
+  TokenVerify,
   image.single("User_image"),
   UpdateProfile,
 );

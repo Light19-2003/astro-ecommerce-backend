@@ -10,6 +10,8 @@ import crypto from "crypto";
 
 import usermodel from "../Model/User.model.js";
 
+import emailverificationmodel from "../Model/emailverification.model.js";
+
 // import CreateHashPassword from "../PasswordHash/password.js";
 
 // import verfilypass from "../PasswordHash/password.js";
@@ -22,6 +24,7 @@ import {
 import supabase from "../Database/db.js";
 
 import sendEmail from "../utils/email.js";
+import UserModel from "../Model/User.model.js";
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -33,23 +36,35 @@ export const login = async (req, res) => {
       });
     }
 
-    // Find user by email
-    const { data: user, error } = await supabase
-      .from("UserModel")
-      .select("*")
-      .eq("Email", email)
-      .single();
+    const user = await usermodel.findOne({ email });
 
     console.log(user);
-
-    if (error || !user) {
-      return res.status(401).json({
-        message: "User not found in sql",
+    if (!user) {
+      return res.status(400).json({
+        message: "User not found",
       });
     }
 
+    // Find user by email
+    // const { data: user, error } = await supabase
+    //   .from("UserModel")
+    //   .select("*")
+    //   .eq("Email", email)
+    //   .single();
+
+    console.log(user);
+
+    // if (error || !user) {
+    //   return res.status(401).json({
+    //     message: "User not found in sql",
+    //   });
+    // }
+
     // Verify password
-    const isPasswordValid = await VerfiyPaswword(password, user.Password);
+
+    console.log(user.password);
+    console.log(password);
+    const isPasswordValid = await VerfiyPaswword(password, user.password);
 
     if (!isPasswordValid) {
       return res.status(401).json({
@@ -92,104 +107,91 @@ export const CreateUser = async (req, res) => {
   try {
     const { FullName, Email, Password, role } = req.body;
 
-    // 1. Validation
+    // 1. Validate request
     if (!FullName || !Email || !Password || !role) {
-      return res.status(400).json({ message: "All fields are required" });
+      return res.status(400).json({
+        message: "All fields are required",
+      });
     }
 
-    // 2. Check user exists
-    if (await CheckUser(Email)) {
+    // 2. Check if user already exists
+    const existingUser = await CheckUser(Email);
+
+    if (existingUser) {
       return res.status(400).json({
         message: "User already exists",
       });
     }
 
-    // console.log(CheckUser(Email));
-
     // 3. Hash password
     const hashedPassword = await CreateharhPassword(Password);
 
     // 4. Create user
-    const { data: userData, error: userError } = await supabase
-      .from("UserModel")
-      .insert({
-        Fullname: FullName,
-        Email: Email,
-        Password: hashedPassword,
-        Role: role,
-        isVerified: false,
-      })
-      .select()
-      .single();
+    const user = await UserModel.create({
+      fullname: FullName,
+      email: Email,
+      password: hashedPassword,
+      role: role,
+      isActive: false,
+      isVerified: false,
+    });
 
-    if (userError) {
+    if (!user) {
       return res.status(500).json({
         message: "User creation failed",
-        error: userError,
       });
     }
 
-    // 5. Generate token
+    // 5. Generate verification token
     const token = crypto.randomBytes(64).toString("hex");
 
-    // 6. Save token
-    const { error: tokenError } = await supabase
-      .from("EmailVerification")
-      .insert({
-        Userid: userData.id, // FIXED (important)
-        email: Email,
-        token: token,
-        isUsed: false, 
-      });
+    // 6. Save verification token
+    const emailVerification = await emailverificationmodel.create({
+      userId: user._id,
+      token: token,
+      email: Email,
+      isUsed: false,
+      createdAt: new Date(),
+    });
 
-    if (tokenError) {
+    if (!emailVerification) {
       return res.status(500).json({
-        message: "Token creation failed",
-        error: tokenError,
+        message: "Failed to create verification token",
       });
     }
 
-    // 7. Create verification link
+    // 7. Verification link
     const verificationLink = `http://localhost:5000/auth/verify-email?token=${token}`;
 
-    // 8. Send EMAIL (FIXED)
+    // 8. Send verification email
     await sendEmail(Email, token);
 
-    console.log("Verification Token:", token);
+    // 9. Remove password from response
+    const { password, ...userData } = user.toObject();
 
-    // 9. Response
+    // 10. Success response
     return res.status(201).json({
-      message: "User created successfully. Verify email.",
+      message: "User created successfully. Please verify your email.",
       user: userData,
-      verificationLink: verificationLink,
+      verificationLink,
     });
-  } catch (ex) {
-    console.log(ex);
-    return res.status(500).json({ message: ex.message });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      message: error.message,
+    });
   }
 };
 
 async function CheckUser(email) {
   try {
-    const { data, error } = await supabase
-      .from("UserModel")
-      .select("*")
-      .eq("Email", email)
-      .single(); // ✅ correct
+    const user = await UserModel.findOne({ email });
 
-    if (error) {
-      console.log("DB Error:", error);
-      return false;
-    }
-
-    if (!data) {
-      return false;
-    }
-
-    return true;
-  } catch (ex) {
-    console.log(ex);
-    return false;
+    return user;
+  } catch (error) {
+    console.log("DB Error:", error);
+    return null;
   }
 }
 
@@ -198,54 +200,57 @@ export const EmailVerfily = async (req, res) => {
     const token = req.headers["x-verification-token"];
 
     if (!token) {
-      return res.status(400).json({ message: "Token is required" });
-    }
-
-    const { data: tokenData, error: tokenError } = await supabase
-      .from("EmailVerification")
-      .select("*")
-      .eq("token", token)
-      .single();
-
-    if (tokenError || !tokenData) {
-      return res.status(400).json({ message: "Invalid token" });
-    }
-
-    if (tokenData.isUsed == true) {
-      return res.status(400).json({ message: "Already verified" });
-    }
-
-    const { error: userdata } = await supabase
-      .from("UserModel")
-      .update({
-        isVerified: true,
-      })
-      .eq("id", tokenData.Userid);
-
-    console.log(userdata);
-
-    if (userdata) {
-      res.status(400).json({ message: userdata.message });
-    }
-
-    const { error: tokenUpdateError } = await supabase
-      .from("EmailVerification")
-      .update({
-        isUsed: true,
-      })
-      .eq("token", token);
-
-    if (tokenUpdateError) {
       return res.status(400).json({
-        message: tokenUpdateError.message,
+        message: "Token is required",
       });
     }
+
+    // Find verification token
+    const emailVerification = await emailverificationmodel.findOne({ token });
+
+    if (!emailVerification) {
+      return res.status(400).json({
+        message: "Invalid token",
+      });
+    }
+
+    if (emailVerification.isUsed) {
+      return res.status(400).json({
+        message: "Email already verified",
+      });
+    }
+
+    // Update user
+    const user = await UserModel.findByIdAndUpdate(
+      emailVerification.userId,
+      {
+        isVerified: true,
+        isActive: true,
+      },
+      { new: true },
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    // Mark token as used
+    await emailverificationmodel.findByIdAndUpdate(emailVerification._id, {
+      isUsed: true,
+      token: null,
+    });
 
     return res.status(200).json({
       message: "Email verified successfully",
     });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    console.log(error);
+
+    return res.status(500).json({
+      message: error.message,
+    });
   }
 };
 
@@ -253,69 +258,89 @@ export const ForgetPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
-    console.log(email);
-
     if (!email) {
-      return res.status(400).json({ message: "Email is required" });
+      return res.status(400).json({
+        message: "Email is required",
+      });
     }
 
-    const user = await supabase
-      .from("UserModel")
-      .select("*")
-      .eq("Email", email)
-      .single();
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    const resttoken = crypto.randomBytes(64).toString("hex");
-
-    await supabase
-      .from("UserModel")
-      .update({ Resettoken: resttoken })
-      .eq("Email", email);
-
-    await sendEmail(email, resttoken);
-    return res.status(200).json({ message: "Reset email sent!" });
-  } catch (ex) {}
-};
-
-export const ResetPassword = async (req, res) => {
-  try {
-    const { resettoken, password } = req.body;
-
-    if (!resettoken || !password) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-
-    console.log(resettoken);
-
-    const { data: user, error } = await supabase
-      .from("UserModel")
-      .select("*")
-      .eq("Resettoken", resettoken)
-      .single();
+    // Find user
+    const user = await UserModel.findOne({ email });
 
     console.log(user);
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        message: "User not found",
+      });
     }
 
-    // const newpassword = await CreateHashPassword(password);
+    // Generate reset token
+    const resetToken = crypto.randomBytes(64).toString("hex");
 
-    await supabase
-      .from("UserModel")
-      .update({
-        Password: password,
-        Resettoken: null,
-      })
-      .eq("Resettoken", resettoken);
+    // Save token
+    user.Resettoken = resetToken;
 
-    return res.status(200).json({ message: "Password reset successfully!" });
+    await user.save();
+
+    // Send email
+    await sendEmail(email, resetToken);
+
+    return res.status(200).json({
+      message: "Password reset email sent successfully.",
+    });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    console.error(error);
+
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+export const ResetPassword = async (req, res) => {
+  try {
+    const { resetToken, password } = req.body;
+
+    // Validate request
+    if (!resetToken || !password) {
+      return res.status(400).json({
+        message: "All fields are required",
+      });
+    }
+
+    // Find user by reset token
+    const user = await UserModel.findOne({
+      Resettoken: resetToken,
+    });
+
+    console.log(user);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "Invalid or expired reset token",
+      });
+    }
+
+    // Check token expiration
+
+    // Hash new password
+    const hashedPassword = await CreateharhPassword(password);
+
+    // Update user
+    user.password = hashedPassword;
+    user.Resettoken = null;
+
+    await user.save();
+
+    return res.status(200).json({
+      message: "Password reset successfully.",
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      message: error.message,
+    });
   }
 };
 
