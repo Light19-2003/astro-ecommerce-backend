@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { type } from "node:os";
 
 const UserSchema = new mongoose.Schema(
   {
@@ -13,13 +12,12 @@ const UserSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    fullname: {
-      type: String,
-      required: true,
-    },
+
     role: {
       type: String,
+      enum: ["user", "admin"],
       required: true,
+      default: "user",
     },
     Resettoken: String,
 

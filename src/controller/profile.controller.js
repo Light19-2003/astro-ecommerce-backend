@@ -91,11 +91,7 @@ export const UserProfileController = async (req, res) => {
 
 export const GetProfile = async (req, res) => {
   try {
-    // You can take userId from query OR JWT (better)
-    const userId = req.query.userId;
-
-    console.log("query:", req.query);
-    console.log("userId:", userId);
+    const userId = req.user.id;
 
     if (!userId) {
       return res.status(400).json({
@@ -110,9 +106,17 @@ export const GetProfile = async (req, res) => {
 
     console.log("profile:", profile);
 
+    // if (!profile) {
+    //   return res.status(404).json({
+    //     message: "Profile not found",
+    //   });
+    // }
+
     if (!profile) {
-      return res.status(404).json({
-        message: "Profile not found",
+      return res.status(200).json({
+        success: true,
+        message: "Profile not created yet",
+        data: null,
       });
     }
 

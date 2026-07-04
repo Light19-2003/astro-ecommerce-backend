@@ -14,7 +14,7 @@ const routes = expres.Router();
 //    post profile
 
 routes.post(
-  "/create-profile",
+  "/create",
   TokenVerify,
   image.single("User_image"),
   UserProfileController,
