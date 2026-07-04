@@ -15,19 +15,19 @@ router.get("/", (req, res) => {
   res.send("hello world");
 });
 
-router.post("/Create-user", CreateUser);
+router.post("/create", CreateUser);
 
-router.post("/emailverify", EmailVerfily);
+router.post("/email-verify", EmailVerfily);
 
 router.post("/login", login);
 
-router.post("/forget-password", ForgetPassword);
+router.post("/forgot-password", ForgetPassword);
 
 router.post("/reset-password", ResetPassword);
 // router.post("/Token-testing", TokenVerify, (req, res) => {
 //   res.send(req.user.id);
 // });
 
-router.get("/Refresh-token", RefreshToken);
+router.get("/refresh-token", RefreshToken);
 
 export default router;

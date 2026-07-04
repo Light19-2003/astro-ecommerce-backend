@@ -105,10 +105,10 @@ export const login = async (req, res) => {
 
 export const CreateUser = async (req, res) => {
   try {
-    const { FullName, Email, Password, role } = req.body;
+    const { Email, Password, role } = req.body;
 
     // 1. Validate request
-    if (!FullName || !Email || !Password || !role) {
+    if (!Email || !Password) {
       return res.status(400).json({
         message: "All fields are required",
       });
@@ -128,7 +128,6 @@ export const CreateUser = async (req, res) => {
 
     // 4. Create user
     const user = await UserModel.create({
-      fullname: FullName,
       email: Email,
       password: hashedPassword,
       role: role,
