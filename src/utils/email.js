@@ -3,6 +3,7 @@ import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 
 dotenv.config();
+// const html = emailTemplate.replace("{{verificationLink}}", verificationLink);
 export const SendEmail = async (email, token) => {
   try {
     const transporter = nodemailer.createTransport({
@@ -11,7 +12,7 @@ export const SendEmail = async (email, token) => {
       secure: false,
       auth: {
         user: process.env.EMAIL,
-        pass: process.env.EMAIL_PASSWORD, 
+        pass: process.env.EMAIL_PASSWORD,
       },
     });
 
