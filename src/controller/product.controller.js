@@ -6,9 +6,24 @@ import productModel from "../Model/product.model.js";
 
 export const CreateProduct = async (req, res) => {
   try {
-    const { name, description, price, category_id } = req.body;
+    const {
+      name,
+      description,
+      price,
+      category_id,
+      size,
+      brand,
+      producthightlight,
+    } = req.body;
 
-    if (!name || !description || !price || !category_id) {
+    if (
+      !name ||
+      !description ||
+      !price ||
+      !category_id ||
+      !brand ||
+      !producthightlight
+    ) {
       return res.status(400).json({
         message: "All fields are required",
       });
@@ -42,6 +57,9 @@ export const CreateProduct = async (req, res) => {
       description,
       price,
       category_id,
+      size,
+      brand,
+      producthightlight,
       image: filePath,
     });
 
@@ -133,7 +151,15 @@ export const DeleteProduct = async (req, res) => {
 // update
 export const UpdateProduct = async (req, res) => {
   try {
-    const { name, description, price, category_id } = req.body;
+    const {
+      name,
+      description,
+      price,
+      category_id,
+      size,
+      brand,
+      producthightlight,
+    } = req.body;
 
     if (!name || !description || !price) {
       return res.status(400).json({
@@ -171,6 +197,9 @@ export const UpdateProduct = async (req, res) => {
       });
     }
     product.name = name;
+    product.size = size;
+    product.brand = brand;
+    product.producthightlight = producthightlight;
     product.description = description;
     product.price = price;
     product.category_id = category_id;

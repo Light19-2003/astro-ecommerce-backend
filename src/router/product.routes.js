@@ -8,10 +8,12 @@ import {
 } from "../controller/product.controller.js";
 import image from "../middlewere/image.middlewere.js";
 
+import { isAdmin } from "../middlewere/is-admin.middlewere.js";
+
 import { TokenVerify } from "../middlewere/auth.middlewere.js";
 const routes = express.Router();
 
-routes.post("/create", TokenVerify, image.single("User_image"), CreateProduct);
+routes.post("/create", isAdmin, image.single("User_image"), CreateProduct);
 
 routes.get("/all-product", TokenVerify, GetAllProduct);
 

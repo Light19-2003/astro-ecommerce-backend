@@ -1,4 +1,5 @@
 import mango from "mongoose";
+import { type } from "node:os";
 
 const productSchema = new mango.Schema(
   {
@@ -21,6 +22,22 @@ const productSchema = new mango.Schema(
 
     price: {
       type: Number,
+      required: true,
+    },
+    size: {
+      type: String,
+      enum: ["small", "medium", "large"],
+      required: true,
+      default: "small",
+    },
+
+    producthightlight: {
+      type: String,
+      required: true,
+    },
+
+    brand: {
+      type: String,
       required: true,
     },
 

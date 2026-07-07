@@ -9,12 +9,13 @@ import {
 import image from "../middlewere/image.middlewere.js";
 
 import { TokenVerify } from "../middlewere/auth.middlewere.js";
+import { isAdmin } from "../middlewere/is-admin.middlewere.js";
 
 const routes = express.Router();
 
 routes.post(
   "/create",
-  TokenVerify,
+  isAdmin,
   image.single("User_image"),
 
   CreateCategory,
