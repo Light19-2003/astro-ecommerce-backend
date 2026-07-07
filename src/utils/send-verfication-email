@@ -1,56 +1,41 @@
-import nodemailer from "nodemailer";
-import dotenv from "dotenv";
+import { Resend } from "resend";
 import fs from "fs";
 import path from "path";
+import dotenv from "dotenv";
 
 dotenv.config();
 
+const resend = new Resend(process.env.RESEND_KEY);
+
 export const SendVerficationEmail = async (email, token) => {
   try {
-    // Frontend URL
     const verificationLink = `${process.env.FRONTEND_URL}/?token=${token}`;
 
-    // Read HTML template
     const templatePath = path.join(
       process.cwd(),
       "src",
       "templates",
       "emailTemplate.html",
     );
-    console.log(verificationLink);
 
     let html = fs.readFileSync(templatePath, "utf8");
-
-    // Replace placeholder
     html = html.replace(/{{verificationLink}}/g, verificationLink);
 
-    console.log(verificationLink);
-    console.log(html);
-
-    // Create transporter
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true,
-      auth: {
-        user: process.env.EMAIL,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-    });
-
-    // Send mail
-    await transporter.sendMail({
-      from: `"Internship" <${process.env.EMAIL}>`,
+    const { data, error } = await resend.emails.send({
+      from: "Astro E-commerce <onboarding@resend.dev>", // testing ke liye ye default domain kaafi hai
       to: email,
       subject: "Verify Your Email",
       html,
     });
 
-    console.log("✅ Email sent successfully");
-    console.log(verificationLink);
-    console.log(html);
+    if (error) {
+      console.log("❌ Email error:", error);
+      return;
+    }
+
+    console.log("✅ Email sent successfully:", data);
   } catch (err) {
-    console.log(err);
+    console.log("❌ Unexpected error:", err);
   }
 };
 
