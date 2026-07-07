@@ -25,6 +25,7 @@ import supabase from "../Database/db.js";
 
 import sendEmail from "../utils/email.js";
 import UserModel from "../Model/User.model.js";
+import { SendVerficationEmail } from "../utils/send-verfication-email";
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -165,7 +166,9 @@ export const CreateUser = async (req, res) => {
     const verificationLink = `http://localhost:5000/auth/verify-email?token=${token}`;
 
     // 8. Send verification email
-    await sendEmail(Email, token);
+    // await sendEmail(Email, token);
+
+    await SendVerficationEmail(Email, token);
 
     // 9. Remove password from response
     const { password, ...userData } = user.toObject();
@@ -174,8 +177,6 @@ export const CreateUser = async (req, res) => {
     return res.status(201).json({
       message: "User created successfully. Please verify your email.",
       user: userData,
-      // verificationLink,
-      EmailverificationToken: token,
     });
   } catch (error) {
     console.error(error);
