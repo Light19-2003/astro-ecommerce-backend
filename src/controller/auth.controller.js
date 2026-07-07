@@ -79,8 +79,10 @@ export const login = async (req, res) => {
         message: "User not verified",
       });
     }
-    const accessToken = generateAccessToken(user.id);
-    const refreshToken = generateRefreshToken(user.id);
+    const accessToken = generateAccessToken(user.id, user.role);
+    const refreshToken = generateRefreshToken(user.id, user.role);
+
+    console.log(user.role);
 
     return res.status(200).json({
       message: "Login successful",
