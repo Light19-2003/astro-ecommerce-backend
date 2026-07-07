@@ -174,7 +174,8 @@ export const CreateUser = async (req, res) => {
     return res.status(201).json({
       message: "User created successfully. Please verify your email.",
       user: userData,
-      verificationLink,
+      // verificationLink,
+      EmailverificationToken: token,
     });
   } catch (error) {
     console.error(error);
