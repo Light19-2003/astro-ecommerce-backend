@@ -28,16 +28,16 @@ import UserModel from "../Model/User.model.js";
 import { SendVerficationEmail } from "../utils/send-verfication-email";
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { Email, Password } = req.body;
 
     // Validate input
-    if (!email || !password) {
+    if (!Email || !Password) {
       return res.status(400).json({
         message: "Email and password are required",
       });
     }
 
-    const user = await usermodel.findOne({ email });
+    const user = await usermodel.findOne({ email: Email });
 
     console.log(user);
     if (!user) {
@@ -64,8 +64,8 @@ export const login = async (req, res) => {
     // Verify password
 
     console.log(user.password);
-    console.log(password);
-    const isPasswordValid = await VerfiyPaswword(password, user.password);
+    console.log(Password);
+    const isPasswordValid = await VerfiyPaswword(Password, user.password);
 
     if (!isPasswordValid) {
       return res.status(401).json({
@@ -75,11 +75,11 @@ export const login = async (req, res) => {
 
     // Generate tokens
 
-    if (user.isVerified === false) {
-      return res.status(401).json({
-        message: "User not verified",
-      });
-    }
+    // if (user.isVerified === false) {
+    //   return res.status(401).json({
+    //     message: "User not verified",
+    //   });
+    // }
     const accessToken = generateAccessToken(user.id, user.role);
     const refreshToken = generateRefreshToken(user.id, user.role);
 
