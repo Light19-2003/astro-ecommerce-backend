@@ -357,7 +357,7 @@ export const RefreshToken = async (req, res) => {
 
     const decoded = jwt.verify(refreshToken, process.env.refresh_token);
 
-    const newAccessToken = generateAccessToken(decoded.id,decoded.role);
+    const newAccessToken = generateAccessToken(decoded.id, decoded.role);
 
     return res.status(200).json({ accessToken: newAccessToken });
   } catch (error) {
