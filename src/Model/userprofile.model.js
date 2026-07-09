@@ -4,7 +4,7 @@ const userProfileSchema = new mongoose.Schema(
   {
     userid: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "UserModel", // Authentication Model
+      ref: "UserAuthenticationModel", // Authentication Model
       required: true,
       unique: true,
     },

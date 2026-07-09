@@ -1,6 +1,9 @@
 import sharp from "sharp";
 import path from "path";
+
 import fs from "fs";
+
+
 
 import catmodel from "../Model/Category.model.js";
 import upload from "../middlewere/image.middlewere.js";
@@ -101,63 +104,68 @@ export const GetAllCategory = async (req, res) => {
 
 export const UpdateCategory = async (req, res) => {
   try {
-    const cateid = req.params.categoryId;
+    const { categoryId } = req.params;
     const { name, tagline, themecolor } = req.body;
 
-    // if (!name || !tagline || !themecolor) {
-    //   return res.status(400).json({
-    //     message: "All fields are required",
-    //   });
-    // }
-
-    if (!cateid) {
+    if (!categoryId) {
       return res.status(400).json({
+        success: false,
         message: "Category id is required",
       });
     }
 
-    console.log(req.file);
+    // Find category
+    const category = await catmodel.findById(categoryId);
 
-    // if (!req.file) {
-    //   return res.status(400).json({
-    //     message: "Image is required",
-    //   });
-    // }
-
-    const uploadDir = "uploads";
-
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir);
-    }
-
-    const filename = `${Date.now()}.webp`;
-    const filePath = path.join(uploadDir, filename);
-
-    await sharp(req.file.buffer)
-      .resize(500, 500)
-      .webp({ quality: 80 })
-      .toFile(filePath);
-
-    const cate = await catmodel.updateOne(
-      { _id: cateid },
-      { name: name, tagline: tagline, themecolor: themecolor, image: filePath },
-    );
-    if (cate) {
-      return res.status(200).json({
-        message: "Category updated successfully",
-        sucess: true,
-      });
-    } else {
-      return res.status(400).json({
-        message: "Category not updated",
-        sucess: false,
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found",
       });
     }
+
+    const updateData = {};
+
+    if (name) updateData.name = name;
+    if (tagline) updateData.tagline = tagline;
+    if (themecolor) updateData.themecolor = themecolor;
+
+    // Image uploaded
+    if (req.file) {
+      const uploadDir = "uploads";
+
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      const filename = `${Date.now()}.webp`;
+      const filePath = path.join(uploadDir, filename);
+
+      await sharp(req.file.buffer)
+        .resize(500, 500)
+        .webp({ quality: 80 })
+        .toFile(filePath);
+
+      // Delete old image
+      if (category.image && fs.existsSync(category.image)) {
+        fs.unlinkSync(category.image);
+      }
+
+      updateData.image = filePath;
+    }
+
+    await catmodel.findByIdAndUpdate(categoryId, updateData);
+
+    return res.status(200).json({
+      success: true,
+      message: "Category updated successfully",
+    });
   } catch (ex) {
     console.log(ex);
+
     return res.status(500).json({
+      success: false,
       message: ex.message,
-      sucess: false,
     });
   }
 };
