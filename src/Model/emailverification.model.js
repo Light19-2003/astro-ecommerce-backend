@@ -4,7 +4,7 @@ const EmailVerification = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "UserModel",
+      ref: "UserAuthenticationModel",
       required: true,
     },
 
