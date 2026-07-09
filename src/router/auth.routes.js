@@ -27,7 +27,7 @@ router.post("/reset-password", ResetPassword);
 // router.post("/Token-testing", TokenVerify, (req, res) => {
 //   res.send(req.user.id);
 // });
-
+router.post("/", (req, res) => {});
 router.post("/refresh-token", RefreshToken);
 
 export default router;

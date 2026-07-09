@@ -43,4 +43,4 @@ export default mongoose.model("Category", Categoty);
 
 // themecolore;
 
-// image;
+// image;`
