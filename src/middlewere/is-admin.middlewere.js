@@ -9,8 +9,8 @@ export const isAdmin = (req, res, next) => {
         message: "Token is required",
       });
     }
-    console.log(req.headers);
-    console.log(req.headers.authorization);
+    // console.log(req.headers);
+    // console.log(req.headers.authorization);
 
     const token = authHeader.split(" ")[1];
 

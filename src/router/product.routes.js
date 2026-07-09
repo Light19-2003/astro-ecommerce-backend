@@ -19,7 +19,7 @@ routes.get("/all-product", TokenVerify, GetAllProduct);
 
 routes.get("/product-id/:id", TokenVerify, GetProductById);
 
-routes.delete("/delete/:id", TokenVerify, DeleteProduct);
+routes.delete("/delete/:id", isAdmin, DeleteProduct);
 
 routes.put(
   "/update/:id",

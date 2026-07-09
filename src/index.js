@@ -12,6 +12,7 @@ import addtocart from "./router/cart.routes.js";
 // import db from "./Database/db.js";
 
 import userprofile from "../src/router/User_profile.routes.js";
+import wishlist from "./router/wishlist.routes.js";
 
 dotenv.config();
 
@@ -36,6 +37,8 @@ app.use("/api/v1/category", cate);
 app.use("/api/v1/product", product);
 
 app.use("/api/v1/cart", addtocart);
+
+app.use("/api/v1/wishlist", wishlist);
 
 app.listen(process.env.port, () =>
   console.log(`Server is running on port ${process.env.port}`),

@@ -36,7 +36,19 @@ const productSchema = new mango.Schema(
       required: true,
     },
 
+    stock: {
+      type: Number,
+
+      default: 0,
+      min: 0,
+    },
+
     brand: {
+      type: String,
+      required: true,
+    },
+
+    localimage: {
       type: String,
       required: true,
     },
@@ -44,6 +56,10 @@ const productSchema = new mango.Schema(
     image: {
       type: String,
       required: true,
+    },
+
+    public_id: {
+      type: String,
     },
   },
   {
