@@ -4,6 +4,8 @@ import path from "path";
 import fs from "fs";
 import productModel from "../Model/product.model.js";
 
+import cloudinary from "../config/image.config.js";
+
 export const CreateProduct = async (req, res) => {
   try {
     const {
@@ -42,8 +44,14 @@ export const CreateProduct = async (req, res) => {
       fs.mkdirSync(ProductUpload);
     }
 
+    const slug = name
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^\w-]/g, "");
+
     // 4. Create filename
-    const fileName = `${Date.now()}.webp`;
+    const fileName = `${slug}-${Date.now()}.webp`;
     const filePath = path.join(ProductUpload, fileName);
 
     // 5. Process image with sharp
@@ -51,6 +59,26 @@ export const CreateProduct = async (req, res) => {
       .resize(500, 500)
       .webp({ quality: 80 })
       .toFile(filePath);
+
+    const cloudinaryResult = await cloudinary.uploader.upload(filePath, {
+      folder: "Astro-e-commerce-products",
+      public_id: slug,
+    });
+
+    let image = filePath;
+    let public_id = null;
+
+    console.log(process.env.USE_CLOUDINARY);
+
+    if (process.env.USE_CLOUDINARY === "true") {
+      const cloudinaryResult = await cloudinary.uploader.upload(filePath, {
+        folder: "products",
+        public_id: slug,
+      });
+
+      image = cloudinaryResult.secure_url;
+      public_id = cloudinaryResult.public_id;
+    }
 
     const product = await Product.create({
       name,
@@ -60,7 +88,12 @@ export const CreateProduct = async (req, res) => {
       size,
       brand,
       producthightlight,
-      image: filePath,
+
+      localimage: filePath,
+
+      // Cloudinary
+      image: image,
+      public_id: public_id,
     });
 
     // product.save();

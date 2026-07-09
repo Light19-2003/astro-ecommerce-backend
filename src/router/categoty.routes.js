@@ -25,11 +25,11 @@ routes.get("/get-all", TokenVerify, GetAllCategory);
 
 routes.put(
   "/update/:categoryId",
-  TokenVerify,
+  isAdmin,
   image.single("User_image"),
   UpdateCategory,
 );
 
-routes.delete("/delete/:categoryId", TokenVerify, DeleteCategory);
+routes.delete("/delete/:categoryId", isAdmin, DeleteCategory);
 
 export default routes;
