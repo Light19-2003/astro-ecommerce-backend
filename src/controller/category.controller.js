@@ -104,11 +104,11 @@ export const UpdateCategory = async (req, res) => {
     const cateid = req.params.categoryId;
     const { name, tagline, themecolor } = req.body;
 
-    if (!name || !tagline || !themecolor) {
-      return res.status(400).json({
-        message: "All fields are required",
-      });
-    }
+    // if (!name || !tagline || !themecolor) {
+    //   return res.status(400).json({
+    //     message: "All fields are required",
+    //   });
+    // }
 
     if (!cateid) {
       return res.status(400).json({
@@ -118,11 +118,11 @@ export const UpdateCategory = async (req, res) => {
 
     console.log(req.file);
 
-    if (!req.file) {
-      return res.status(400).json({
-        message: "Image is required",
-      });
-    }
+    // if (!req.file) {
+    //   return res.status(400).json({
+    //     message: "Image is required",
+    //   });
+    // }
 
     const uploadDir = "uploads";
 
