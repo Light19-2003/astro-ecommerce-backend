@@ -3,8 +3,6 @@ import path from "path";
 
 import fs from "fs";
 
-
-
 import catmodel from "../Model/Category.model.js";
 import upload from "../middlewere/image.middlewere.js";
 
