@@ -33,15 +33,7 @@ const userProfileSchema = new mongoose.Schema(
       trim: true,
     },
 
-    avatar: {
-      type: String,
-      default: "",
-    },
-
-    bio: {
-      type: String,
-      default: "",
-    },
+  
 
     gender: {
       type: String,
