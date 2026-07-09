@@ -5,6 +5,7 @@ import {
   DeleteProduct,
   GetProductById,
   UpdateProduct,
+  GetProductsByCategory,
 } from "../controller/product.controller.js";
 import image from "../middlewere/image.middlewere.js";
 
@@ -18,6 +19,8 @@ routes.post("/create", isAdmin, image.single("User_image"), CreateProduct);
 routes.get("/all-product", TokenVerify, GetAllProduct);
 
 routes.get("/product-id/:id", TokenVerify, GetProductById);
+
+routes.get("/category/:categoryId", TokenVerify, GetProductsByCategory);
 
 routes.delete("/delete/:id", isAdmin, DeleteProduct);
 

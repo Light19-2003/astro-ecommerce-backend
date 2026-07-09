@@ -40,11 +40,28 @@ export const CreateCategory = async (req, res) => {
       .webp({ quality: 80 })
       .toFile(filePath);
 
+    let image = filePath;
+    let public_id = null;
+
+    console.log(process.env.USE_CLOUDINARY);
+
+    if (process.env.USE_CLOUDINARY === "true") {
+      const cloudinaryResult = await cloudinary.uploader.upload(filePath, {
+        folder: "products",
+        public_id: slug,
+      });
+
+      image = cloudinaryResult.secure_url;
+      public_id = cloudinaryResult.public_id;
+    }
+
     const category = await catmodel.create({
       name: name,
       tagline: tagline,
       themecolor: themecolor,
+      localimage: filePath,
       image: filePath,
+      public_id: public_id,
     });
 
     if (category) {

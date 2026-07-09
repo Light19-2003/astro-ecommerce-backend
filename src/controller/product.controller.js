@@ -15,6 +15,7 @@ export const CreateProduct = async (req, res) => {
       category_id,
       size,
       brand,
+      stock,
       producthightlight,
     } = req.body;
 
@@ -24,7 +25,8 @@ export const CreateProduct = async (req, res) => {
       !price ||
       !category_id ||
       !brand ||
-      !producthightlight
+      !producthightlight ||
+      !stock
     ) {
       return res.status(400).json({
         message: "All fields are required",
@@ -88,7 +90,7 @@ export const CreateProduct = async (req, res) => {
       size,
       brand,
       producthightlight,
-
+      stock: stock,
       localimage: filePath,
 
       // Cloudinary
@@ -155,6 +157,27 @@ export const GetProductById = async (req, res) => {
     console.log(ex);
     return res.status(500).json({
       message: ex.message,
+    });
+  }
+};
+
+export const GetProductsByCategory = async (req, res) => {
+  try {
+    const { categoryId } = req.params;
+
+    const products = await Product.find({
+      category_id: categoryId,
+    }).populate("category_id");
+
+    return res.status(200).json({
+      success: true,
+      count: products.length,
+      products,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
     });
   }
 };

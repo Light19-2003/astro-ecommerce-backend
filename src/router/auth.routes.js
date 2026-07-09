@@ -28,6 +28,6 @@ router.post("/reset-password", ResetPassword);
 //   res.send(req.user.id);
 // });
 
-router.get("/refresh-token", RefreshToken);
+router.post("/refresh-token", RefreshToken);
 
 export default router;

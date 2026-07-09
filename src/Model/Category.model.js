@@ -16,6 +16,15 @@ const Categoty = new mongoose.Schema(
       default: "#000000",
     },
 
+    localimage: {
+      type: String,
+      required: true,
+    },
+
+    public_id: {
+      type: String,
+    },
+
     image: {
       type: String,
       required: true,
