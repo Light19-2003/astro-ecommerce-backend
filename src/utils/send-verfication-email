@@ -7,7 +7,23 @@ dotenv.config();
 
 export const SendVerficationEmail = async (email, token) => {
   try {
-    // Frontend URL
+    // Check environment variables
+    console.log("EMAIL:", process.env.EMAIL);
+    console.log(
+      "EMAIL_PASSWORD Exists:",
+      process.env.EMAIL_PASSWORD ? "YES" : "NO",
+    );
+    console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
+
+    if (
+      !process.env.EMAIL ||
+      !process.env.EMAIL_PASSWORD ||
+      !process.env.FRONTEND_URL
+    ) {
+      throw new Error("Missing required environment variables.");
+    }
+
+    // Verification Link
     const verificationLink = `${process.env.FRONTEND_URL}/?token=${token}`;
 
     // Read HTML template
@@ -17,15 +33,11 @@ export const SendVerficationEmail = async (email, token) => {
       "templates",
       "emailTemplate.html",
     );
-    console.log(verificationLink);
 
     let html = fs.readFileSync(templatePath, "utf8");
 
     // Replace placeholder
     html = html.replace(/{{verificationLink}}/g, verificationLink);
-
-    console.log(verificationLink);
-    console.log(html);
 
     // Create transporter
     const transporter = nodemailer.createTransport({
@@ -36,21 +48,38 @@ export const SendVerficationEmail = async (email, token) => {
         user: process.env.EMAIL,
         pass: process.env.EMAIL_PASSWORD,
       },
+      connectionTimeout: 30000,
+      greetingTimeout: 30000,
+      socketTimeout: 30000,
     });
 
-    // Send mail
-    await transporter.sendMail({
+    // Verify SMTP Connection
+    await transporter.verify();
+    console.log("✅ SMTP Server Connected");
+
+    // Send Mail
+    const info = await transporter.sendMail({
       from: `"Internship" <${process.env.EMAIL}>`,
       to: email,
       subject: "Verify Your Email",
       html,
     });
 
-    console.log("✅ Email sent successfully");
-    console.log(verificationLink);
-    console.log(html);
+    console.log("✅ Email Sent Successfully");
+    console.log(info);
+
+    return true;
   } catch (err) {
-    console.log(err);
+    console.error("=========== EMAIL ERROR ===========");
+    console.error("Message:", err.message);
+    console.error("Code:", err.code);
+    console.error("Command:", err.command);
+    console.error("Response:", err.response);
+    console.error("Response Code:", err.responseCode);
+    console.error("Stack:", err.stack);
+    console.error("===================================");
+
+    return false;
   }
 };
 

@@ -10,80 +10,100 @@ export const UserProfileController = async (req, res) => {
   try {
     const {
       firstName,
+      middleName,
       lastName,
       phoneNumber,
-      dob,
-      bio,
-      middleName,
       gender,
+      dob,
+      addressLine1,
+      addressLine2,
       city,
       state,
+      pincode,
       country,
     } = req.body;
 
     const userId = req.user.id;
 
-    // 1. Validate required fields
-    // if (!firstName || !lastName || !phoneNumber) {
-    //   return res.status(400).json({
-    //     message: "firstName, lastName, phoneNumber are required",
-    //   });
-    // }
-
-    // 2. Check image
-    if (!req.file) {
+    // Validate required fields
+    if (
+      !firstName ||
+      !lastName ||
+      !phoneNumber ||
+      !addressLine1 ||
+      !city ||
+      !state ||
+      !pincode
+    ) {
       return res.status(400).json({
-        message: "Image is required",
+        success: false,
+        message: "Please fill all required fields.",
       });
     }
 
-    // 3. Ensure upload folder exists
-    const uploadDir = "uploads";
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir);
+    // Check if profile already exists
+    const existingProfile = await userprofile.findOne({
+      userid: userId,
+    });
+
+    if (existingProfile) {
+      return res.status(409).json({
+        success: false,
+        message: "Profile already exists.",
+      });
     }
 
-    // 4. Create filename
-    const fileName = `${Date.now()}.webp`;
-    const filePath = path.join(uploadDir, fileName);
+    let avatarPath = "";
 
-    // 5. Process image with sharp
-    await sharp(req.file.buffer)
-      .resize(500, 500)
-      .webp({ quality: 80 })
-      .toFile(filePath);
+    // Process image if uploaded
+    if (req.file) {
+      const uploadDir = path.join(process.cwd(), "uploads");
 
-    // 6. Generate full name
-    const fullName = `${firstName} ${lastName}`;
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
 
-    // 7. Create profile in MongoDB
+      const fileName = `${Date.now()}.webp`;
+      avatarPath = path.join(uploadDir, fileName);
+
+      await sharp(req.file.buffer)
+        .resize(500, 500)
+        .webp({ quality: 80 })
+        .toFile(avatarPath);
+    }
+
     const profile = await userprofile.create({
       userid: userId,
       firstName,
       middleName,
       lastName,
-      fullName,
       phoneNumber,
-      bio,
       gender,
       dob,
-      avatar: filePath,
+
+      // Remove this line if avatar is not in your schema
+      avatar: avatarPath,
+
       address: {
+        addressLine1,
+        addressLine2,
         city,
         state,
-        country,
+        pincode,
+        country: country || "India",
       },
     });
 
-    // 8. Response
     return res.status(201).json({
-      message: "Profile created successfully",
+      success: true,
+      message: "Profile created successfully.",
       data: profile,
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
 
     return res.status(500).json({
+      success: false,
       message: error.message,
     });
   }
@@ -137,100 +157,128 @@ export const UpdateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const { firstName, lastName, phoneNumber, dob, bio, city, state, country } =
-      req.body;
+    const {
+      firstName,
+      middleName,
+      lastName,
+      phoneNumber,
+      gender,
+      dob,
+      addressLine1,
+      addressLine2,
+      city,
+      state,
+      pincode,
+      country,
+    } = req.body;
 
-    // 1. Find existing profile
     const profile = await userprofile.findOne({ userid: userId });
 
     if (!profile) {
       return res.status(404).json({
+        success: false,
         message: "Profile not found",
       });
     }
 
-    // 2. Handle image (optional update)
-    let avatarPath = profile.avatar;
+    profile.firstName = firstName ?? profile.firstName;
+    profile.middleName = middleName ?? profile.middleName;
+    profile.lastName = lastName ?? profile.lastName;
+    profile.phoneNumber = phoneNumber ?? profile.phoneNumber;
+    profile.gender = gender ?? profile.gender;
+    profile.dob = dob ?? profile.dob;
 
+    profile.address.addressLine1 = addressLine1 ?? profile.address.addressLine1;
+
+    profile.address.addressLine2 = addressLine2 ?? profile.address.addressLine2;
+
+    profile.address.city = city ?? profile.address.city;
+
+    profile.address.state = state ?? profile.address.state;
+
+    profile.address.pincode = pincode ?? profile.address.pincode;
+
+    profile.address.country = country ?? profile.address.country;
+
+    // Update image only if avatar exists in schema
     if (req.file) {
-      const uploadDir = "uploads";
+      const uploadDir = path.join(process.cwd(), "uploads");
 
       if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir);
+        fs.mkdirSync(uploadDir, { recursive: true });
       }
 
       const fileName = `${Date.now()}.webp`;
-      avatarPath = path.join(uploadDir, fileName);
+      const filePath = path.join(uploadDir, fileName);
 
       await sharp(req.file.buffer)
         .resize(500, 500)
         .webp({ quality: 80 })
-        .toFile(avatarPath);
+        .toFile(filePath);
+
+      profile.avatar = filePath;
     }
 
-    // 3. Update fields (only if provided)
-    profile.firstName = firstName || profile.firstName;
-    profile.lastName = lastName || profile.lastName;
-    profile.phoneNumber = phoneNumber || profile.phoneNumber;
-    profile.dob = dob || profile.dob;
-    profile.bio = bio || profile.bio;
-
-    profile.address = {
-      city: city || profile.address?.city,
-      state: state || profile.address?.state,
-      country: country || profile.address?.country,
-    };
-
-    profile.avatar = avatarPath;
-
-    // 4. Save updated profile
-    const updatedProfile = await profile.save();
+    await profile.save();
 
     return res.status(200).json({
+      success: true,
       message: "Profile updated successfully",
-      data: updatedProfile,
+      data: profile,
     });
   } catch (error) {
     console.log(error);
 
     return res.status(500).json({
+      success: false,
       message: error.message,
     });
   }
 };
+
 export const SingleFieldProfileUpdate = async (req, res) => {
   try {
     const userId = req.user.id;
 
     const updates = {};
 
-    // 1. Add fields dynamically
-    if (req.body.firstName) {
+    if (req.body.firstName !== undefined)
       updates.firstName = req.body.firstName;
-    }
 
-    if (req.body.lastName) {
-      updates.lastName = req.body.lastName;
-    }
+    if (req.body.middleName !== undefined)
+      updates.middleName = req.body.middleName;
 
-    if (req.body.phoneNumber) {
+    if (req.body.lastName !== undefined) updates.lastName = req.body.lastName;
+
+    if (req.body.phoneNumber !== undefined)
       updates.phoneNumber = req.body.phoneNumber;
-    }
 
-    if (req.body.dob) {
-      updates.dob = req.body.dob;
-    }
+    if (req.body.gender !== undefined) updates.gender = req.body.gender;
 
-    if (req.body.bio) {
-      updates.bio = req.body.bio;
-    }
+    if (req.body.dob !== undefined) updates.dob = req.body.dob;
 
-    // 2. Handle image upload
+    if (req.body.addressLine1 !== undefined)
+      updates["address.addressLine1"] = req.body.addressLine1;
+
+    if (req.body.addressLine2 !== undefined)
+      updates["address.addressLine2"] = req.body.addressLine2;
+
+    if (req.body.city !== undefined) updates["address.city"] = req.body.city;
+
+    if (req.body.state !== undefined) updates["address.state"] = req.body.state;
+
+    if (req.body.pincode !== undefined)
+      updates["address.pincode"] = req.body.pincode;
+
+    if (req.body.country !== undefined)
+      updates["address.country"] = req.body.country;
+
+    // Upload image only if avatar exists in schema
     if (req.file) {
-      const uploadDir = "uploads";
+      const uploadDir = path.join(process.cwd(), "uploads");
 
       if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir);
+        fs.mkdirSync(uploadDir, { recursive: true });
       }
 
       const fileName = `${Date.now()}.webp`;
@@ -244,34 +292,39 @@ export const SingleFieldProfileUpdate = async (req, res) => {
       updates.avatar = filePath;
     }
 
-    // 3. Prevent empty update
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({
-        message: "No fields provided for update",
+        success: false,
+        message: "No fields provided for update.",
       });
     }
 
-    // 4. Update MongoDB
     const updatedProfile = await userprofile.findOneAndUpdate(
       { userid: userId },
       { $set: updates },
-      { new: true },
+      {
+        new: true,
+        runValidators: true,
+      },
     );
 
     if (!updatedProfile) {
       return res.status(404).json({
-        message: "Profile not found",
+        success: false,
+        message: "Profile not found.",
       });
     }
 
     return res.status(200).json({
-      message: "Profile updated successfully",
+      success: true,
+      message: "Profile updated successfully.",
       data: updatedProfile,
     });
   } catch (error) {
     console.log(error);
 
     return res.status(500).json({
+      success: false,
       message: error.message,
     });
   }
