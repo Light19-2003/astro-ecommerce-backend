@@ -43,7 +43,9 @@ export const SendVerficationEmail = async (email, token) => {
     const transporter = nodemailer.createTransport({
       host: "smtp.mailtrap.io",
       port: 2525,
-      secure: true, // true for 465, false for other ports
+      secure: false,
+      requireTLS: true,
+
       connectionTimeout: 10000, // 10 seconds
       greetingTimeout: 10000,
       // This line forces Node to prefer IPv4 (addresses like 172.217.x.x)
