@@ -41,16 +41,18 @@ export const SendVerficationEmail = async (email, token) => {
 
     // Create transporter
     const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      service: "gmail",
-
-      port: 587,
-      family: 4,
-      secure: false,
-
+      host: "://gmail.com",
+      port: 465,
+      secure: true, // true for 465, false for other ports
+      connectionTimeout: 10000, // 10 seconds
+      greetingTimeout: 10000,
+      // This line forces Node to prefer IPv4 (addresses like 172.217.x.x)
+      dnsLookup: (hostname, options, callback) => {
+        require("dns").lookup(hostname, { family: 4 }, callback);
+      },
       auth: {
-        user: process.env.EMAIL,
-        pass: process.env.EMAIL_PASSWORD,
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD,
       },
     });
 
