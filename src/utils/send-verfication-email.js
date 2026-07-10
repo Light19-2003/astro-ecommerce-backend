@@ -41,8 +41,8 @@ export const SendVerficationEmail = async (email, token) => {
 
     // Create transporter
     const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
+      host: "smtp.mailtrap.io",
+      port: 2525,
       secure: true, // true for 465, false for other ports
       connectionTimeout: 10000, // 10 seconds
       greetingTimeout: 10000,
@@ -51,8 +51,8 @@ export const SendVerficationEmail = async (email, token) => {
         require("dns").lookup(hostname, { family: 4 }, callback);
       },
       auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
+        user: process.env.EMAIL,
+        pass: process.env.EMAIL_PASSWORD,
       },
     });
 
