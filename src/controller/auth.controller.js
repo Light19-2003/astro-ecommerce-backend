@@ -25,7 +25,7 @@ import supabase from "../Database/db.js";
 
 import sendEmail from "../utils/email.js";
 import UserModel from "../Model/User.model.js";
-import { SendVerficationEmail } from "../utils/send-verfication-email";
+import { SendVerficationEmail } from "../utils/send-verfication-email.js";
 export const login = async (req, res) => {
   try {
     const { Email, Password } = req.body;
