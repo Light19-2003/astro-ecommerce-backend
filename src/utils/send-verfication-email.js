@@ -42,9 +42,12 @@ export const SendVerficationEmail = async (email, token) => {
     // Create transporter
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
+      service: "gmail",
+
       port: 587,
       family: 4,
       secure: false,
+
       auth: {
         user: process.env.EMAIL,
         pass: process.env.EMAIL_PASSWORD,
