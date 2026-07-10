@@ -34,6 +34,9 @@ export const SendVerficationEmail = async (email, token) => {
       "emailTemplate.html",
     );
 
+    console.log("EMAIL:", process.env.EMAIL);
+    console.log("PASSWORD LENGTH:", process.env.EMAIL_PASSWORD?.length);
+
     let html = fs.readFileSync(templatePath, "utf8");
 
     // Replace placeholder
