@@ -8,6 +8,7 @@ import {
   EmailVerfily,
 } from "../controller/auth.controller.js";
 
+import testEmail from "../testing/email.testing.js";
 import { TokenVerify } from "../middlewere/auth.middlewere.js";
 const router = express.Router();
 
@@ -27,6 +28,8 @@ router.post("/reset-password", ResetPassword);
 // router.post("/Token-testing", TokenVerify, (req, res) => {
 //   res.send(req.user.id);
 // });
+
+router.get("/email-testing", testEmail);
 
 router.post("/refresh-token", RefreshToken);
 router.post("/test", (req, res) => {
