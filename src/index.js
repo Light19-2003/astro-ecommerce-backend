@@ -9,6 +9,8 @@ import cate from "./router/categoty.routes.js";
 import product from "./router/product.routes.js";
 import addtocart from "./router/cart.routes.js";
 
+import dashboard from "./router/admin.dashboard.routes.js";
+
 // import db from "./Database/db.js";
 
 import userprofile from "../src/router/User_profile.routes.js";
@@ -39,6 +41,8 @@ app.use("/api/v1/product", product);
 app.use("/api/v1/cart", addtocart);
 
 app.use("/api/v1/wishlist", wishlist);
+
+app.use("/api/v1/dashboard", dashboard);
 
 app.listen(process.env.port, () =>
   console.log(`Server is running on port ${process.env.port}`),
