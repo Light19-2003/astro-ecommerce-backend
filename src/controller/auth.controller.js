@@ -21,7 +21,7 @@ import {
   VerfiyPaswword,
 } from "../PasswordHash/password.js";
 
-import supabase from "../Database/db.js";
+// import supabase from "../Database/db.js";
 
 import sendEmail from "../utils/email.js";
 import UserModel from "../Model/User.model.js";

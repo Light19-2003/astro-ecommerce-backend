@@ -4,7 +4,7 @@ import fs from "fs";
 
 import userprofile from "../Model/userprofile.model.js";
 
-import supabase from "../Database/db.js";
+// import supabase from "../Database/db.js";
 
 export const UserProfileController = async (req, res) => {
   try {
