@@ -41,7 +41,7 @@ export const SendVerficationEmail = async (email, token) => {
 
     // Create transporter
     const transporter = nodemailer.createTransport({
-      host: "://gmail.com",
+      host: "smtp.gmail.com",
       port: 465,
       secure: true, // true for 465, false for other ports
       connectionTimeout: 10000, // 10 seconds
