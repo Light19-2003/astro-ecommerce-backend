@@ -30,6 +30,14 @@ app.use(
 );
 app.use("/uploads", express.static("uploads"));
 
+app.get("/", (req, res) => {
+  return res.status(200).json({
+    message: "Astro ecommerce backend is running",
+    status: "ok",
+    timestamp: new Date().toISOString(),
+  });
+});
+
 app.use("/api/v1/auth", auth);
 
 app.use("/api/v1/user/profile", userprofile);
