@@ -1,34 +1,19 @@
-import nodemailer from "nodemailer";
-import dotenv from "dotenv";
+import { verifySmtpConnection } from "../utils/email.js";
 
-dotenv.config();
-
-async function testEmail() {
+async function testEmail(req, res) {
   try {
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL,
-        pass: process.env.EMAIL_PASSWORD,
-      },
+    await verifySmtpConnection();
+
+    return res.status(200).json({
+      message: "SMTP connected successfully",
     });
-
-    // Verify SMTP connection
-    await transporter.verify();
-    console.log("✅ SMTP Connected");
-
-    // Send test email
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL,
-      to: "semwalakshit19@gmail.com", // Replace with your email
-      subject: "Nodemailer Test",
-      text: "Hello! This is a test email from Nodemailer.",
-    });
-
-    console.log("✅ Email Sent");
-    console.log(info);
   } catch (err) {
-    console.error("❌ Error:", err);
+    console.error("SMTP Error:", err);
+
+    return res.status(500).json({
+      message: "SMTP connection failed",
+      error: err.message,
+    });
   }
 }
 

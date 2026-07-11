@@ -23,9 +23,11 @@ import {
 
 // import supabase from "../Database/db.js";
 
-import sendEmail from "../utils/email.js";
+import {
+  sendPasswordResetEmail,
+  sendVerificationEmail,
+} from "../utils/email.js";
 import UserModel from "../Model/User.model.js";
-import { SendVerficationEmail } from "../utils/send-verfication-email.js";
 export const login = async (req, res) => {
   try {
     const { Email, Password } = req.body;
@@ -162,18 +164,13 @@ export const CreateUser = async (req, res) => {
       });
     }
 
-    // 7. Verification link
-    const verificationLink = `http://localhost:5000/auth/verify-email?token=${token}`;
+    // 7. Send verification email
+    await sendVerificationEmail(Email, token);
 
-    // 8. Send verification email
-    // await sendEmail(Email, token);
-
-    await SendVerficationEmail(Email, token);
-
-    // 9. Remove password from response
+    // 8. Remove password from response
     const { password, ...userData } = user.toObject();
 
-    // 10. Success response
+    // 9. Success response
     return res.status(201).json({
       message: "User created successfully. Please verify your email.",
       user: userData,
@@ -200,7 +197,8 @@ async function CheckUser(email) {
 
 export const EmailVerfily = async (req, res) => {
   try {
-    const token = req.headers["x-verification-token"];
+    const token =
+      req.headers["x-verification-token"] || req.query.token || req.body.token;
 
     if (!token) {
       return res.status(400).json({
@@ -287,7 +285,7 @@ export const ForgetPassword = async (req, res) => {
     await user.save();
 
     // Send email
-    await sendEmail(email, resetToken);
+    await sendPasswordResetEmail(email, resetToken);
 
     return res.status(200).json({
       message: "Password reset email sent successfully.",

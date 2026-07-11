@@ -1,3 +1,36 @@
+# Environment
 .env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime
+dist/
+build/
+coverage/
+.cache/
+.tmp/
+tmp/
+
+# Uploads
+uploads/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local Docker files
 Dockerfile
 docker-compose.yml
