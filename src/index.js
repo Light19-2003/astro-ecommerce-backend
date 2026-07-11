@@ -14,15 +14,21 @@ const app = express();
 
 app.use(express.json());
 app.use(
-	cros({
-		origin: "*",
-	})
+  cros({
+    origin: "*",
+  }),
 );
+
+// home route
+app.get("/", (req, res) => {
+  res.send("Welcome to the E-commerce astro");
+});
+
 app.use("/uploads", express.static("uploads"));
 
 app.use("/api/v1", adminRouter);
 app.use("/api/v1", userRouter);
 
 app.listen(process.env.port, () =>
-	console.log(`Server is running on port ${process.env.port}`)
+  console.log(`Server is running on port ${process.env.port}`),
 );
