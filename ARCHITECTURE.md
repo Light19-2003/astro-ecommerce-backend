@@ -9,14 +9,14 @@
 - `src/services`: Single-source feature logic used by both Admin and User controllers.
 - `src/utils`, `src/config`, `src/database`, `src/templates`: Shared infrastructure.
 
-Return and Login Activity modules are not present in the original codebase. Add them under the appropriate Admin/User module when their business logic and models are implemented; no placeholder behavior was invented during this refactor.
+Return and Login Activity modules have since been added. Their shared logic lives in `src/services`, while role-specific controllers and routes expose only the handlers appropriate to each API area.
 
 ## Canonical route prefixes
 
 | Area | Prefixes |
 | --- | --- |
-| Admin | `/api/v1/admin/products`, `/categories`, `/orders`, `/banners`, `/audit-logs`, `/coupons`, `/inventory`, `/policies`, `/reviews` |
-| User | `/api/v1/user/auth`, `/profile`, `/products`, `/categories`, `/cart`, `/orders`, `/banners`, `/coupons`, `/policies`, `/reviews`, `/wishlist` |
+| Admin | `/api/v1/admin/products`, `/categories`, `/orders`, `/returns`, `/analytics`, `/homepage`, `/referrals`, `/banners`, `/audit-logs`, `/coupons`, `/inventory`, `/policies`, `/reviews` |
+| User | `/api/v1/user/auth`, `/profile`, `/products`, `/categories`, `/cart`, `/orders`, `/returns`, `/payment`, `/analytics`, `/banners`, `/coupons`, `/policies`, `/reviews`, `/wishlist` |
 
 Legacy prefixes remain registered as compatibility aliases during client migration.
 

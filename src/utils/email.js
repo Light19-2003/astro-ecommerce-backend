@@ -102,8 +102,6 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
 
   const resetLink = `${process.env.RESET_PASSWORD_FRONTEND_URL}/reset-password.html?token=${encodeURIComponent(resetToken)}`;
 
-  console.log("Reset Password Link:", resetLink);
-
   const html = await renderTemplate("password-reset-email.html", {
     resetLink,
   });

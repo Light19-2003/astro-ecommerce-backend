@@ -11,6 +11,11 @@ import profileRoutes from "./routes/profile.routes.js";
 import reviewRoutes from "./routes/review.routes.js";
 import wishlistRoutes from "./routes/wishlist.routes.js";
 
+import analyticsRoutes from "./routes/analytics.routes.js";
+
+import payementRoutes from "./routes/payment.routes.js";
+import returnRoutes from "./routes/return.routes.js";
+
 const router = express.Router();
 
 // Canonical User API.
@@ -25,6 +30,9 @@ router.use("/user/products", productRoutes);
 router.use("/user/profile", profileRoutes);
 router.use("/user/reviews", reviewRoutes);
 router.use("/user/wishlist", wishlistRoutes);
+router.use("/user/analytics", analyticsRoutes);
+router.use("/user/payment", payementRoutes);
+router.use("/user/returns", returnRoutes);
 
 // Backward-compatible aliases for existing clients.
 router.use("/auth", authRoutes);
@@ -37,5 +45,16 @@ router.use("/policy", policyRoutes);
 router.use("/product", productRoutes);
 router.use("/review", reviewRoutes);
 router.use("/wishlist", wishlistRoutes);
+
+//  analytics routes
+
+router.use("/analytics", analyticsRoutes);
+
+// payment routes
+
+router.use("/payment", payementRoutes);
+// return routes
+
+router.use("/return", returnRoutes);
 
 export default router;

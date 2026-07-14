@@ -19,7 +19,6 @@ import {
   VerfiyPaswword,
 } from "../../utils/password.js";
 
-import supabase from "../../database/db.js";
 
 import sendEmail from "../../utils/email.js";
 import UserModel from "../../models/User.model.js";
@@ -28,8 +27,33 @@ import {
   sendPasswordResetEmail,
   sendVerificationEmail,
 } from "../../utils/email.js";
+import {
+  CloseLoginActivity,
+  CreateLoginActivity,
+} from "../../services/login-activity.service.js";
 
 const normalizeEmail = (email = "") => String(email).trim().toLowerCase();
+
+const hashPasswordResetToken = (resetToken) =>
+  crypto.createHash("sha256").update(String(resetToken)).digest("hex");
+
+const getPasswordResetTokenTtlMs = () => {
+  const configuredMinutes = Number.parseInt(
+    process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES,
+    10,
+  );
+  const ttlMinutes =
+    Number.isInteger(configuredMinutes) && configuredMinutes > 0
+      ? Math.min(configuredMinutes, 1440)
+      : 15;
+
+  return ttlMinutes * 60 * 1000;
+};
+
+const generateReferralCode = (email) => {
+  const prefix = String(email).split("@")[0].replace(/[^a-z0-9]/gi, "").slice(0, 4);
+  return `${prefix}${crypto.randomBytes(3).toString("hex")}`.toUpperCase();
+};
 
 const escapeRegex = (value = "") =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -130,6 +154,7 @@ export const login = async (req, res) => {
 
     const accessToken = generateAccessToken(user.id, user.role);
     const refreshToken = generateRefreshToken(user.id, user.role);
+    const activity = await CreateLoginActivity(req, user.id);
     const profile = await UserProfile.findOne({ userid: user.id }).select(
       "fullName firstName middleName lastName",
     );
@@ -147,6 +172,7 @@ export const login = async (req, res) => {
         accessToken,
         refreshToken,
       },
+      activityId: activity?._id || null,
     });
   } catch (ex) {
     console.error(ex);
@@ -159,7 +185,7 @@ export const login = async (req, res) => {
 
 export const CreateUser = async (req, res) => {
   try {
-    const { Email, Password, role } = req.body;
+    const { Email, Password, referralCode } = req.body;
     const email = normalizeEmail(Email);
 
     // 1. Validate request
@@ -178,6 +204,16 @@ export const CreateUser = async (req, res) => {
       });
     }
 
+    const referrerProfile = referralCode
+      ? await UserProfile.findOne({
+          referralCode: String(referralCode).trim().toUpperCase(),
+        })
+      : null;
+
+    if (referralCode && !referrerProfile) {
+      return res.status(400).json({ message: "Invalid referral code" });
+    }
+
     // 3. Hash password
     const hashedPassword = await CreateharhPassword(Password);
 
@@ -185,7 +221,7 @@ export const CreateUser = async (req, res) => {
     const user = await UserModel.create({
       email,
       password: hashedPassword,
-      role: role || "user",
+      role: "user",
       isActive: true,
       isVerified: false,
     });
@@ -195,6 +231,12 @@ export const CreateUser = async (req, res) => {
         message: "User creation failed",
       });
     }
+
+    await UserProfile.create({
+      userid: user._id,
+      referralCode: generateReferralCode(email),
+      referredBy: referrerProfile?.userid || null,
+    });
 
     // 5. Generate verification token
     const token = crypto.randomBytes(64).toString("hex");
@@ -215,7 +257,7 @@ export const CreateUser = async (req, res) => {
     }
 
     // 7. Verification link
-    const verificationLink = `http://localhost:5000/auth/verify-email?token=${token}`;
+    const verificationLink = `${process.env.FRONTEND_URL || "http://localhost:3000"}/auth/verify-email?token=${token}`;
 
     // 8. Send verification email
     // await sendEmail(Email, token);
@@ -236,6 +278,22 @@ export const CreateUser = async (req, res) => {
     return res.status(500).json({
       message: error.message,
     });
+  }
+};
+
+export const logout = async (req, res) => {
+  try {
+    const activityId = req.body?.activityId;
+    if (activityId) {
+      await CloseLoginActivity(req.user.id, activityId);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Logout recorded successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -311,7 +369,7 @@ export const EmailVerfily = async (req, res) => {
 
 export const ForgetPassword = async (req, res) => {
   try {
-    const { email } = req.body;
+    const email = normalizeEmail(req.body?.email);
 
     if (!email) {
       return res.status(400).json({
@@ -319,10 +377,7 @@ export const ForgetPassword = async (req, res) => {
       });
     }
 
-    // Find user
-    const user = await UserModel.findOne({ email });
-
-    console.log(user);
+    const user = await findUserByEmail(email);
 
     if (!user) {
       return res.status(404).json({
@@ -330,17 +385,26 @@ export const ForgetPassword = async (req, res) => {
       });
     }
 
-    // Generate reset token
     const resetToken = crypto.randomBytes(64).toString("hex");
+    const passwordResetTokenHash = hashPasswordResetToken(resetToken);
+    const passwordResetTokenExpiresAt = new Date(
+      Date.now() + getPasswordResetTokenTtlMs(),
+    );
 
-    // Save token
-    user.Resettoken = resetToken;
+    // Use the native collection update so any legacy plaintext token is
+    // removed even after the old Resettoken path is removed from the schema.
+    await UserModel.collection.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          passwordResetTokenHash,
+          passwordResetTokenExpiresAt,
+        },
+        $unset: { Resettoken: "" },
+      },
+    );
 
-    await user.save();
-
-    // Send email
-
-    await sendPasswordResetEmail(email, resetToken);
+    await sendPasswordResetEmail(user.email, resetToken);
 
     return res.status(200).json({
       message: "Password reset email sent successfully.",
@@ -364,29 +428,32 @@ export const ResetPassword = async (req, res) => {
       });
     }
 
-    // Find user by reset token
-    const user = await UserModel.findOne({
-      Resettoken: resetToken,
-    });
+    const hashedPassword = await CreateharhPassword(password);
+    const passwordResetTokenHash = hashPasswordResetToken(resetToken);
 
-    console.log(user);
+    // Matching and clearing in one database operation prevents the same
+    // one-time token from succeeding in two concurrent requests.
+    const user = await UserModel.findOneAndUpdate(
+      {
+        passwordResetTokenHash,
+        passwordResetTokenExpiresAt: { $gt: new Date() },
+      },
+      {
+        $set: { password: hashedPassword },
+        $unset: {
+          passwordResetTokenHash: "",
+          passwordResetTokenExpiresAt: "",
+          Resettoken: "",
+        },
+      },
+      { returnDocument: "after" },
+    );
 
     if (!user) {
       return res.status(404).json({
         message: "Invalid or expired reset token",
       });
     }
-
-    // Check token expiration
-
-    // Hash new password
-    const hashedPassword = await CreateharhPassword(password);
-
-    // Update user
-    user.password = hashedPassword;
-    user.Resettoken = null;
-
-    await user.save();
 
     return res.status(200).json({
       message: "Password reset successfully.",
@@ -417,6 +484,8 @@ export const RefreshToken = async (req, res) => {
     const newRefreshToken = generateRefreshToken(decoded.id, decoded.role);
 
     return res.status(200).json({
+      message: "Token refreshed successfully",
+
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
       token: {

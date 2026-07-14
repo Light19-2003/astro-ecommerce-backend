@@ -26,6 +26,11 @@ const Categoty = new mongoose.Schema(
     public_id: {
       type: String,
     },
+    storageProvider: {
+      type: String,
+      enum: ["local", "cloudinary", "s3"],
+      default: "cloudinary",
+    },
   },
 
   {

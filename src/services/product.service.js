@@ -120,6 +120,7 @@ export const CreateProduct = async (req, res) => {
       // Cloudinary
       image: imageResult.image,
       public_id: imageResult.public_id,
+      storageProvider: imageResult.storageProvider,
     });
 
     // product.save();
@@ -215,7 +216,11 @@ export const DeleteProduct = async (req, res) => {
       });
     }
 
-    await deleteImageAsset(product.public_id);
+    await deleteImageAsset({
+      publicId: product.public_id,
+      localimage: product.localimage,
+      storageProvider: product.storageProvider,
+    });
 
     return res.status(200).json({
       message: "Product deleted successfully",
@@ -263,11 +268,16 @@ export const UpdateProduct = async (req, res) => {
         quality: 80,
       });
 
-      await deleteImageAsset(product.public_id);
+      await deleteImageAsset({
+        publicId: product.public_id,
+        localimage: product.localimage,
+        storageProvider: product.storageProvider,
+      });
 
       product.image = imageResult.image;
       product.localimage = imageResult.localimage;
       product.public_id = imageResult.public_id;
+      product.storageProvider = imageResult.storageProvider;
     }
 
     if (name !== undefined) product.name = name;

@@ -55,6 +55,18 @@
       "value": ""
     },
     {
+      "key": "returnId",
+      "value": ""
+    },
+    {
+      "key": "referrerId",
+      "value": ""
+    },
+    {
+      "key": "activityId",
+      "value": ""
+    },
+    {
       "key": "policySlug",
       "value": "privacy-policy"
     }
@@ -90,7 +102,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"Email\": \"customer@example.com\",\n  \"Password\": \"StrongPassword123!\",\n  \"role\": \"user\"\n}",
+              "raw": "{\n  \"Email\": \"customer@example.com\",\n  \"Password\": \"StrongPassword123!\",\n  \"referralCode\": \"\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -137,7 +149,8 @@
                 "exec": [
                   "const response = pm.response.json();",
                   "if (response.token?.accessToken) pm.collectionVariables.set('accessToken', response.token.accessToken);",
-                  "if (response.token?.refreshToken) pm.collectionVariables.set('refreshToken', response.token.refreshToken);"
+                  "if (response.token?.refreshToken) pm.collectionVariables.set('refreshToken', response.token.refreshToken);",
+                  "if (response.activityId) pm.collectionVariables.set('activityId', response.activityId);"
                 ]
               }
             }
@@ -163,6 +176,39 @@
               }
             },
             "url": "{{baseUrl}}/user/auth/login",
+            "description": "See docs/API.md for usage details."
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activityId\": \"{{activityId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/user/auth/logout",
             "description": "See docs/API.md for usage details."
           }
         },
@@ -1219,6 +1265,174 @@
       ]
     },
     {
+      "name": "User - Analytics, Payments and Returns",
+      "item": [
+        {
+          "name": "Track Page View",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"path\": \"/products\",\n  \"name\": \"Products\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/user/analytics/track-page",
+            "description": "See docs/API.md for usage details."
+          }
+        },
+        {
+          "name": "Create Razorpay Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"productId\": \"{{productId}}\",\n      \"quantity\": 1\n    }\n  ],\n  \"shippingAddress\": {\n    \"fullName\": \"Example Customer\",\n    \"phone\": \"9876543210\",\n    \"address\": \"12 Market Road\",\n    \"city\": \"Jaipur\",\n    \"state\": \"Rajasthan\",\n    \"pincode\": \"302001\",\n    \"country\": \"India\"\n  },\n  \"coupon\": null,\n  \"useWallet\": false,\n  \"idempotencyKey\": \"checkout_20260714_001\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/user/payment/razorpay/order",
+            "description": "See docs/API.md for usage details."
+          }
+        },
+        {
+          "name": "Verify Razorpay Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"razorpay_order_id\": \"order_...\",\n  \"razorpay_payment_id\": \"pay_...\",\n  \"razorpay_signature\": \"signature\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/user/payment/razorpay/verify",
+            "description": "See docs/API.md for usage details."
+          }
+        },
+        {
+          "name": "Create Return Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 1,\n  \"reason\": \"Product arrived damaged\",\n  \"details\": \"The outer edge is cracked.\",\n  \"proofImages\": [\n    \"https://example.com/proof-1.jpg\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/user/returns",
+            "description": "See docs/API.md for usage details."
+          }
+        },
+        {
+          "name": "My Returns",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/user/returns/my",
+            "description": "See docs/API.md for usage details."
+          }
+        },
+        {
+          "name": "Get Return",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/user/returns/{{returnId}}",
+            "description": "See docs/API.md for usage details."
+          }
+        }
+      ]
+    },
+    {
       "name": "Admin - Dashboard and Users",
       "item": [
         {
@@ -1298,6 +1512,25 @@
           }
         },
         {
+          "name": "Login Activities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/admin/login-activities?page=1&limit=10&status=all&search=&from=&to=",
+            "description": "See docs/API.md for usage details."
+          }
+        },
+        {
           "name": "Audit Logs",
           "request": {
             "method": "GET",
@@ -1313,6 +1546,77 @@
               ]
             },
             "url": "{{baseUrl}}/admin/audit-logs?action=&module=&search=",
+            "description": "See docs/API.md for usage details."
+          }
+        },
+        {
+          "name": "Page Views",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/admin/analytics/page-views",
+            "description": "See docs/API.md for usage details."
+          }
+        },
+        {
+          "name": "Admin Returns",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/admin/returns?page=1&limit=10&status=all&search=",
+            "description": "See docs/API.md for usage details."
+          }
+        },
+        {
+          "name": "Update Return Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"adminNote\": \"Return approved\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/admin/returns/{{returnId}}/status",
             "description": "See docs/API.md for usage details."
           }
         }
@@ -2100,6 +2404,191 @@
               ]
             },
             "url": "{{baseUrl}}/admin/policies/delete/{{policyId}}",
+            "description": "See docs/API.md for usage details."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Homepage and Referrals",
+      "item": [
+        {
+          "name": "Get Homepage Settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/admin/homepage/settings",
+            "description": "See docs/API.md for usage details."
+          }
+        },
+        {
+          "name": "Update Homepage Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bestsellerCategoryId\": \"{{categoryId}}\",\n  \"backgroundColor\": \"#ffffff\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/admin/homepage/Update-settings",
+            "description": "See docs/API.md for usage details."
+          }
+        },
+        {
+          "name": "Get Referral Settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/admin/referrals/settings",
+            "description": "See docs/API.md for usage details."
+          }
+        },
+        {
+          "name": "Update Referral Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"signupDiscountAmount\": 150,\n  \"referrerRewardAmount\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/admin/referrals/settings",
+            "description": "See docs/API.md for usage details."
+          }
+        },
+        {
+          "name": "Referral Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/admin/referrals/stats",
+            "description": "See docs/API.md for usage details."
+          }
+        },
+        {
+          "name": "Referral Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/admin/referrals/details",
+            "description": "See docs/API.md for usage details."
+          }
+        },
+        {
+          "name": "Delete Referrer Record",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/admin/referrals/referrer/{{referrerId}}",
+            "description": "See docs/API.md for usage details."
+          }
+        },
+        {
+          "name": "Delete Referral Discount",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/admin/referrals/discount/{{couponId}}",
             "description": "See docs/API.md for usage details."
           }
         }

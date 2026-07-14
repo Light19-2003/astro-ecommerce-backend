@@ -3,9 +3,9 @@ import { CreateInventory, GetAllInventory, GetInventoryByProduct, InsertMissingI
 import { isAdmin } from "../middlewares/is-admin.middleware.js";
 
 const router = express.Router();
-router.post("/create", CreateInventory);
+router.post("/create", isAdmin, CreateInventory);
 router.post("/insert-missing", isAdmin, InsertMissingInventoryFromProducts);
-router.get("/get-inventory", GetAllInventory);
-router.get("/:productId", GetInventoryByProduct);
-router.put("/:productId", UpdateStock);
+router.get("/get-inventory", isAdmin, GetAllInventory);
+router.get("/:productId", isAdmin, GetInventoryByProduct);
+router.put("/:productId", isAdmin, UpdateStock);
 export default router;

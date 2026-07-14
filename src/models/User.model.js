@@ -19,7 +19,15 @@ const UserSchema = new mongoose.Schema(
       required: true,
       default: "user",
     },
-    Resettoken: String,
+    passwordResetTokenHash: {
+      type: String,
+      select: false,
+      index: true,
+    },
+    passwordResetTokenExpiresAt: {
+      type: Date,
+      select: false,
+    },
 
     isVerified: Boolean,
     isActive: Boolean,

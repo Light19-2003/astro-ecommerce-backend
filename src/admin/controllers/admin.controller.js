@@ -318,7 +318,7 @@ export const GetAllUsers = async (req, res) => {
     }
 
     const users = await UserAuthentication.find(filter)
-      .select("-password -Resettoken")
+      .select("-password -passwordResetTokenHash -passwordResetTokenExpiresAt")
       .sort({ createdAt: -1 });
 
     const userIds = users.map((user) => user._id);
@@ -381,7 +381,9 @@ const setUserActiveStatus = async ({ id, isActive, adminId }) => {
     throw error;
   }
 
-  const user = await UserAuthentication.findById(id).select("-password -Resettoken");
+  const user = await UserAuthentication.findById(id).select(
+    "-password -passwordResetTokenHash -passwordResetTokenExpiresAt",
+  );
 
   if (!user) {
     const error = new Error("User not found");

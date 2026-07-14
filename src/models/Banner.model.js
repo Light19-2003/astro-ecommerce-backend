@@ -9,6 +9,15 @@ const BannerSchema = new mongoose.Schema(
     public_id: {
       type: String,
     },
+    localimage: {
+      type: String,
+      default: null,
+    },
+    storageProvider: {
+      type: String,
+      enum: ["local", "cloudinary", "s3"],
+      default: "cloudinary",
+    },
     title: {
       type: String,
       default: "",

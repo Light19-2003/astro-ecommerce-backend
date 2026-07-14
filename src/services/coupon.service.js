@@ -28,8 +28,12 @@ const getMinPurchaseAmount = (body = {}) =>
   body.minPrice ??
   body.minimumAmount ??
   body.minOrderAmount;
-const normalizeEmail = (email = "") => String(email || "").trim().toLowerCase();
-const escapeRegex = (value = "") => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const normalizeEmail = (email = "") =>
+  String(email || "")
+    .trim()
+    .toLowerCase();
+const escapeRegex = (value = "") =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const findUserByEmail = async (email) => {
   const normalizedEmail = normalizeEmail(email);
@@ -47,13 +51,16 @@ const getRefId = (value) => {
 };
 
 const serializeCoupon = (coupon) => {
-  const source = typeof coupon.toObject === "function" ? coupon.toObject() : coupon;
+  const source =
+    typeof coupon.toObject === "function" ? coupon.toObject() : coupon;
   const product = source.product_id;
   const category = source.category_id;
   const productId = getRefId(product);
   const categoryId = getRefId(category);
   const targetType =
-    (!source.targetType || source.targetType === "all") && productId && !categoryId
+    (!source.targetType || source.targetType === "all") &&
+    productId &&
+    !categoryId
       ? "product"
       : source.targetType || (categoryId ? "category" : "all");
 
@@ -77,7 +84,9 @@ const serializeCoupon = (coupon) => {
     expireDate: source.expireDate,
     maxLimit: source.maxLimit,
     minPurchaseAmount: Number(source.minPurchaseAmount) || 0,
-    usage: Array.isArray(source.usedBy) ? source.usedBy.length : source.usage || 0,
+    usage: Array.isArray(source.usedBy)
+      ? source.usedBy.length
+      : source.usage || 0,
     isActive: source.isActive,
     createdAt: source.createdAt,
     updatedAt: source.updatedAt,
@@ -88,13 +97,18 @@ const buildCouponPayload = async (body = {}, existing = {}) => {
   const productId = getProductId(body);
   const categoryId = getCategoryId(body);
   const targetSpecified =
-    body.targetType !== undefined || productId !== undefined || categoryId !== undefined;
+    body.targetType !== undefined ||
+    productId !== undefined ||
+    categoryId !== undefined;
   const payload = {};
 
   if (body.discountType !== undefined) payload.discountType = body.discountType;
-  if (body.discountValue !== undefined) payload.discountValue = Number(body.discountValue);
-  if (body.startDate !== undefined) payload.startDate = parseDate(body.startDate);
-  if (body.expireDate !== undefined) payload.expireDate = parseDate(body.expireDate, true);
+  if (body.discountValue !== undefined)
+    payload.discountValue = Number(body.discountValue);
+  if (body.startDate !== undefined)
+    payload.startDate = parseDate(body.startDate);
+  if (body.expireDate !== undefined)
+    payload.expireDate = parseDate(body.expireDate, true);
   if (body.maxLimit !== undefined) payload.maxLimit = Number(body.maxLimit);
   if (getMinPurchaseAmount(body) !== undefined) {
     payload.minPurchaseAmount = Number(getMinPurchaseAmount(body));
@@ -106,7 +120,9 @@ const buildCouponPayload = async (body = {}, existing = {}) => {
     body.userEmail !== undefined ||
     body.email !== undefined
   ) {
-    const customerEmail = normalizeEmail(body.customerEmail || body.userEmail || body.email);
+    const customerEmail = normalizeEmail(
+      body.customerEmail || body.userEmail || body.email,
+    );
 
     if (!customerEmail) {
       payload.assignedUser = undefined;
@@ -123,7 +139,9 @@ const buildCouponPayload = async (body = {}, existing = {}) => {
   }
 
   if (targetSpecified) {
-    const targetType = body.targetType || (productId ? "product" : categoryId ? "category" : "all");
+    const targetType =
+      body.targetType ||
+      (productId ? "product" : categoryId ? "category" : "all");
     payload.targetType = targetType;
 
     if (!["all", "category", "product"].includes(targetType)) {
@@ -187,10 +205,16 @@ const buildCouponPayload = async (body = {}, existing = {}) => {
   if (!["percentage", "fixed"].includes(merged.discountType)) {
     throw couponError("Discount type must be percentage or fixed");
   }
-  if (Number.isNaN(Number(merged.discountValue)) || Number(merged.discountValue) <= 0) {
+  if (
+    Number.isNaN(Number(merged.discountValue)) ||
+    Number(merged.discountValue) <= 0
+  ) {
     throw couponError("Discount value must be greater than 0");
   }
-  if (merged.discountType === "percentage" && Number(merged.discountValue) > 100) {
+  if (
+    merged.discountType === "percentage" &&
+    Number(merged.discountValue) > 100
+  ) {
     throw couponError("Percentage discount cannot be greater than 100");
   }
   if (Number.isNaN(Number(merged.maxLimit)) || Number(merged.maxLimit) < 1) {
@@ -315,10 +339,16 @@ export const GetAvailableCoupons = async (req, res) => {
       .filter((id) => mongoose.Types.ObjectId.isValid(id));
     const productsInCart =
       productIds.length > 0
-        ? await ProductModel.find({ _id: { $in: productIds } }).select("category_id")
+        ? await ProductModel.find({ _id: { $in: productIds } }).select(
+            "category_id",
+          )
         : [];
     const categoryIds = [
-      ...new Set(productsInCart.map((product) => String(product.category_id)).filter(Boolean)),
+      ...new Set(
+        productsInCart
+          .map((product) => String(product.category_id))
+          .filter(Boolean),
+      ),
     ];
 
     const filter = {
@@ -354,7 +384,9 @@ export const GetAvailableCoupons = async (req, res) => {
       .sort({ expireDate: 1 });
 
     const availableCoupons = coupons.filter((coupon) => {
-      const usage = coupon.usedBy.find((entry) => String(entry.user) === String(req.user.id));
+      const usage = coupon.usedBy.find(
+        (entry) => String(entry.user) === String(req.user.id),
+      );
       return Number(usage?.count || 0) < Number(coupon.maxLimit);
     });
 

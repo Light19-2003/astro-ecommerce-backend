@@ -1,6 +1,5 @@
 import userprofile from "../../models/userprofile.model.js";
 
-import supabase from "../../database/db.js";
 import { deleteImageAsset, saveImageAsset } from "../../utils/image-upload.js";
 
 const VALID_GENDERS = new Set(["Male", "Female", "Other"]);
@@ -9,13 +8,17 @@ const clean = (value) => (typeof value === "string" ? value.trim() : value);
 
 const buildNameFields = (body = {}) => {
   const sourceFullName = clean(body.fullName || body.name || "");
-  const parts = sourceFullName ? sourceFullName.split(/\s+/).filter(Boolean) : [];
+  const parts = sourceFullName
+    ? sourceFullName.split(/\s+/).filter(Boolean)
+    : [];
   const firstName = clean(body.firstName) || parts[0] || "";
-  const middleName = body.middleName !== undefined ? clean(body.middleName) || "" : "";
+  const middleName =
+    body.middleName !== undefined ? clean(body.middleName) || "" : "";
   const lastName =
     clean(body.lastName) || (parts.length > 1 ? parts.slice(1).join(" ") : "");
   const fullName =
-    sourceFullName || [firstName, middleName, lastName].filter(Boolean).join(" ");
+    sourceFullName ||
+    [firstName, middleName, lastName].filter(Boolean).join(" ");
 
   const updates = {};
   if (fullName) updates.fullName = fullName;
@@ -35,7 +38,8 @@ const collectProfileUpdates = (body = {}) => {
   if (phoneNumber) updates.phoneNumber = phoneNumber;
   if (body.dob) updates.dob = body.dob;
   if (body.bio !== undefined) updates.bio = clean(body.bio) || "";
-  if (body.gender && VALID_GENDERS.has(body.gender)) updates.gender = body.gender;
+  if (body.gender && VALID_GENDERS.has(body.gender))
+    updates.gender = body.gender;
 
   const addressLine1 = clean(body.addressLine1 || body.address || body.line);
   if (addressLine1) updates["address.addressLine1"] = addressLine1;
@@ -68,14 +72,19 @@ const attachAvatarUpdate = async (updates, file, userId) => {
 
   const existingProfile = await userprofile
     .findOne({ userid: userId })
-    .select("avatarPublicId");
+    .select("avatarPublicId avatarLocal avatarStorageProvider");
   const avatarResult = await saveAvatar(file, userId);
 
-  await deleteImageAsset(existingProfile?.avatarPublicId);
+  await deleteImageAsset({
+    publicId: existingProfile?.avatarPublicId,
+    localimage: existingProfile?.avatarLocal,
+    storageProvider: existingProfile?.avatarStorageProvider,
+  });
 
   updates.avatar = avatarResult.image;
   updates.avatarLocal = avatarResult.localimage;
   updates.avatarPublicId = avatarResult.public_id || "";
+  updates.avatarStorageProvider = avatarResult.storageProvider;
 };
 
 const attachIsFilled = (profile) => {
@@ -85,11 +94,11 @@ const attachIsFilled = (profile) => {
   const address = data.address || {};
   const isFilled = Boolean(
     (data.fullName || data.firstName) &&
-      data.phoneNumber &&
-      address.addressLine1 &&
-      address.city &&
-      address.state &&
-      address.pincode,
+    data.phoneNumber &&
+    address.addressLine1 &&
+    address.city &&
+    address.state &&
+    address.pincode,
   );
 
   return { ...data, isFilled };

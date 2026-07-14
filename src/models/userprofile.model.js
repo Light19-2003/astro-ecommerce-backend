@@ -53,6 +53,11 @@ const userProfileSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    avatarStorageProvider: {
+      type: String,
+      enum: ["local", "cloudinary", "s3"],
+      default: "cloudinary",
+    },
 
     bio: {
       type: String,
@@ -104,6 +109,35 @@ const userProfileSchema = new mongoose.Schema(
         default: "India",
         trim: true,
       },
+    },
+    referralCode: {
+      type: String,
+      uppercase: true,
+      trim: true,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
+    referredBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserAuthenticationModel",
+      default: null,
+      index: true,
+    },
+    walletBalance: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    totalWalletCreditEarned: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    totalReferrals: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
   },
   {

@@ -20,6 +20,7 @@ const request = (name, method, path, options = {}) => ({
           "const response = pm.response.json();",
           "if (response.token?.accessToken) pm.collectionVariables.set('accessToken', response.token.accessToken);",
           "if (response.token?.refreshToken) pm.collectionVariables.set('refreshToken', response.token.refreshToken);",
+          "if (response.activityId) pm.collectionVariables.set('activityId', response.activityId);",
         ],
       },
     }],
@@ -54,9 +55,10 @@ const folders = [
     name: "User - Authentication",
     item: [
       request("Health", "GET", "/user/auth/", { public: true }),
-      request("Register", "POST", "/user/auth/create", { public: true, body: { Email: "customer@example.com", Password: "StrongPassword123!", role: "user" } }),
+      request("Register", "POST", "/user/auth/create", { public: true, body: { Email: "customer@example.com", Password: "StrongPassword123!", referralCode: "" } }),
       request("Verify Email", "POST", "/user/auth/email-verify", { public: true, body: { email: "customer@example.com", token: "verification-token" } }),
       request("Login", "POST", "/user/auth/login", { public: true, saveTokens: true, body: { Email: "customer@example.com", Password: "StrongPassword123!" } }),
+      request("Logout", "POST", "/user/auth/logout", { body: { activityId: "{{activityId}}" } }),
       request("Forgot Password", "POST", "/user/auth/forgot-password", { public: true, body: { email: "customer@example.com" } }),
       request("Reset Password", "POST", "/user/auth/reset-password", { public: true, body: { resetToken: "reset-token", password: "NewStrongPassword123!" } }),
       request("Refresh Token - POST", "POST", "/user/auth/refresh-token", { public: true, body: { refreshToken: "{{refreshToken}}" } }),
@@ -128,13 +130,28 @@ const folders = [
     ],
   },
   {
+    name: "User - Analytics, Payments and Returns",
+    item: [
+      request("Track Page View", "POST", "/user/analytics/track-page", { public: true, body: { path: "/products", name: "Products" } }),
+      request("Create Razorpay Order", "POST", "/user/payment/razorpay/order", { body: { items: [{ productId: "{{productId}}", quantity: 1 }], shippingAddress: { fullName: "Example Customer", phone: "9876543210", address: "12 Market Road", city: "Jaipur", state: "Rajasthan", pincode: "302001", country: "India" }, coupon: null, useWallet: false, idempotencyKey: "checkout_20260714_001" } }),
+      request("Verify Razorpay Payment", "POST", "/user/payment/razorpay/verify", { body: { razorpay_order_id: "order_...", razorpay_payment_id: "pay_...", razorpay_signature: "signature" } }),
+      request("Create Return Request", "POST", "/user/returns", { body: { orderId: "{{orderId}}", productId: "{{productId}}", quantity: 1, reason: "Product arrived damaged", details: "The outer edge is cracked.", proofImages: ["https://example.com/proof-1.jpg"] } }),
+      request("My Returns", "GET", "/user/returns/my"),
+      request("Get Return", "GET", "/user/returns/{{returnId}}"),
+    ],
+  },
+  {
     name: "Admin - Dashboard and Users",
     item: [
       request("Dashboard", "GET", "/admin/dashboard"),
       request("List Users", "GET", "/admin/all-users?search=&role=all&status=all"),
       request("Block User", "PUT", "/admin/block/{{userId}}"),
       request("Unblock User", "PUT", "/admin/unblock/{{userId}}"),
+      request("Login Activities", "GET", "/admin/login-activities?page=1&limit=10&status=all&search=&from=&to="),
       request("Audit Logs", "GET", "/admin/audit-logs?action=&module=&search="),
+      request("Page Views", "GET", "/admin/analytics/page-views"),
+      request("Admin Returns", "GET", "/admin/returns?page=1&limit=10&status=all&search="),
+      request("Update Return Status", "PATCH", "/admin/returns/{{returnId}}/status", { body: { status: "approved", adminNote: "Return approved" } }),
     ],
   },
   {
@@ -177,6 +194,19 @@ const folders = [
       request("Delete Policy", "DELETE", "/admin/policies/delete/{{policyId}}"),
     ],
   },
+  {
+    name: "Admin - Homepage and Referrals",
+    item: [
+      request("Get Homepage Settings", "GET", "/admin/homepage/settings"),
+      request("Update Homepage Settings", "PUT", "/admin/homepage/Update-settings", { body: { bestsellerCategoryId: "{{categoryId}}", backgroundColor: "#ffffff" } }),
+      request("Get Referral Settings", "GET", "/admin/referrals/settings"),
+      request("Update Referral Settings", "PUT", "/admin/referrals/settings", { body: { signupDiscountAmount: 150, referrerRewardAmount: 100 } }),
+      request("Referral Stats", "GET", "/admin/referrals/stats"),
+      request("Referral Details", "GET", "/admin/referrals/details"),
+      request("Delete Referrer Record", "DELETE", "/admin/referrals/referrer/{{referrerId}}"),
+      request("Delete Referral Discount", "DELETE", "/admin/referrals/discount/{{couponId}}"),
+    ],
+  },
 ];
 
 const collection = {
@@ -190,7 +220,7 @@ const collection = {
     { key: "baseUrl", value: "http://localhost:3000/api/v1" },
     { key: "accessToken", value: "" },
     { key: "refreshToken", value: "" },
-    ...["userId", "productId", "categoryId", "cartItemId", "orderId", "bannerId", "couponId", "reviewId", "policyId"].map((key) => ({ key, value: "" })),
+    ...["userId", "productId", "categoryId", "cartItemId", "orderId", "bannerId", "couponId", "reviewId", "policyId", "returnId", "referrerId", "activityId"].map((key) => ({ key, value: "" })),
     { key: "policySlug", value: "privacy-policy" },
   ],
   item: folders,
