@@ -71,6 +71,8 @@ export const CreateBanner = async (req, res) => {
       ...payload,
       bg: imageResult.image,
       public_id: imageResult.public_id,
+      localimage: imageResult.localimage,
+      storageProvider: imageResult.storageProvider,
     });
 
     return res.status(201).json({
@@ -128,10 +130,16 @@ export const UpdateBanner = async (req, res) => {
 
     if (req.file) {
       const imageResult = await saveBannerImage(req.file, banner.title);
-      await deleteImageAsset(banner.public_id);
+      await deleteImageAsset({
+        publicId: banner.public_id,
+        localimage: banner.localimage,
+        storageProvider: banner.storageProvider,
+      });
 
       banner.bg = imageResult.image;
       banner.public_id = imageResult.public_id;
+      banner.localimage = imageResult.localimage;
+      banner.storageProvider = imageResult.storageProvider;
     }
 
     await banner.save();
@@ -154,7 +162,11 @@ export const DeleteBanner = async (req, res) => {
       return res.status(404).json({ message: "Banner not found" });
     }
 
-    await deleteImageAsset(banner.public_id);
+    await deleteImageAsset({
+      publicId: banner.public_id,
+      localimage: banner.localimage,
+      storageProvider: banner.storageProvider,
+    });
 
     return res.status(200).json({
       message: "Banner deleted successfully",

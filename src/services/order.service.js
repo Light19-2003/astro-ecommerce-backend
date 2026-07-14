@@ -89,7 +89,8 @@ export const PlaceOrder = async (req, res) => {
       if (!mongoose.Types.ObjectId.isValid(productId)) {
         return res.status(400).json({
           success: false,
-          message: "Invalid product id in cart. Please remove this item and add it again.",
+          message:
+            "Invalid product id in cart. Please remove this item and add it again.",
         });
       }
 
@@ -133,7 +134,10 @@ export const PlaceOrder = async (req, res) => {
         })
       : null;
     const safeDiscount = couponResult?.discount || 0;
-    const totalAmount = Math.max(0, subtotal + shippingCharge + tax - safeDiscount);
+    const totalAmount = Math.max(
+      0,
+      subtotal + shippingCharge + tax - safeDiscount,
+    );
     const normalizedPaymentMethod = normalizePaymentMethod(paymentMethod);
 
     const order = await OrderModel.create({
@@ -263,7 +267,9 @@ export const GetSingleOrder = async (req, res) => {
     }
 
     const isOwner = order.user._id.toString() === req.user.id;
-    const isAdmin = ["admin", "superAdmin", "orderManager"].includes(req.user.role);
+    const isAdmin = ["admin", "superAdmin", "orderManager"].includes(
+      req.user.role,
+    );
 
     if (!isOwner && !isAdmin) {
       return res.status(403).json({
@@ -383,11 +389,18 @@ export const CancelOrder = async (req, res) => {
 
 export const VerifyPayment = async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = req.body;
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      orderId,
+    } = req.body;
 
     const order = await OrderModel.findById(orderId);
     if (!order) {
-      return res.status(404).json({ success: false, message: "Order not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
     }
 
     const body = razorpay_order_id + "|" + razorpay_payment_id;

@@ -21,7 +21,7 @@ Image endpoints use `multipart/form-data`; do not manually set the multipart bou
 
 ## Authentication workflow
 
-1. Register with `POST /user/auth/create`.
+1. Register with `POST /user/auth/create` (optionally include `referralCode`).
 2. Verify the account with `POST /user/auth/email-verify` using the verification data sent by the backend.
 3. Log in with `POST /user/auth/login`.
 4. Copy the access token from the login response and send it as `Authorization: Bearer <token>`.
@@ -32,7 +32,7 @@ Register:
 ```bash
 curl -X POST "http://localhost:3000/api/v1/user/auth/create" \
   -H "Content-Type: application/json" \
-  -d '{"Email":"customer@example.com","Password":"StrongPassword123!","role":"user"}'
+  -d '{"Email":"customer@example.com","Password":"StrongPassword123!","referralCode":"OPTIONALCODE"}'
 ```
 
 Login:
@@ -56,9 +56,10 @@ Refresh token:
 | Method | Endpoint | Authentication | Input |
 | --- | --- | --- | --- |
 | GET | `/user/auth/` | No | Health/welcome response |
-| POST | `/user/auth/create` | No | `{ "Email", "Password", "role": "user" }` |
+| POST | `/user/auth/create` | No | `{ "Email", "Password", "referralCode"? }`; public registration always creates a User role |
 | POST | `/user/auth/email-verify` | No | Verification payload returned/sent by registration flow |
 | POST | `/user/auth/login` | No | `{ "Email", "Password" }` |
+| POST | `/user/auth/logout` | User | `{ "activityId" }` from the login response |
 | POST | `/user/auth/forgot-password` | No | `{ "email" }` |
 | POST | `/user/auth/reset-password` | No | `{ "resetToken", "password" }` |
 | GET | `/user/auth/refresh-token?refreshToken=...` | No | Refresh token query parameter |
@@ -235,6 +236,82 @@ Place order:
 
 The rating must be from 1 to 5 and the comment must contain 3–1000 characters.
 
+### Page analytics
+
+The canonical route uses the User API prefix. The former `/analytics` URL remains a compatibility alias.
+
+| Method | Endpoint | Authentication | Input |
+| --- | --- | --- | --- |
+| POST | `/user/analytics/track-page` | No | `{ "path": "/products", "name": "Products" }` |
+
+Each request increments the stored view count for the supplied page path.
+
+### Razorpay payment checkout
+
+The former `/payment` URLs remain compatibility aliases.
+
+| Method | Endpoint | Authentication | Input |
+| --- | --- | --- | --- |
+| POST | `/user/payment/razorpay/order` | User | Checkout items, address, optional coupon/wallet, and idempotency key |
+| POST | `/user/payment/razorpay/verify` | User | Razorpay order, payment, and signature fields |
+
+Create a Razorpay payment order:
+
+```json
+{
+  "items": [
+    { "productId": "<product-id>", "quantity": 1 }
+  ],
+  "shippingAddress": {
+    "fullName": "Example Customer",
+    "phone": "9876543210",
+    "address": "12 Market Road",
+    "city": "Jaipur",
+    "state": "Rajasthan",
+    "pincode": "302001",
+    "country": "India"
+  },
+  "coupon": null,
+  "useWallet": false,
+  "idempotencyKey": "checkout_20260714_001"
+}
+```
+
+The idempotency key must contain 16–100 letters, numbers, underscores, or hyphens. Reusing it prevents duplicate payment intents.
+
+Verify payment:
+
+```json
+{
+  "razorpay_order_id": "order_...",
+  "razorpay_payment_id": "pay_...",
+  "razorpay_signature": "..."
+}
+```
+
+### Returns
+
+The former `/return` URLs remain compatibility aliases.
+
+| Method | Endpoint | Authentication | Description |
+| --- | --- | --- | --- |
+| POST | `/user/returns` | User | Create a return request for a delivered order item |
+| GET | `/user/returns/my` | User | List the current user's returns |
+| GET | `/user/returns/:id` | User | Get an owned return request |
+
+```json
+{
+  "orderId": "<delivered-order-id>",
+  "productId": "<product-id>",
+  "quantity": 1,
+  "reason": "Product arrived damaged",
+  "details": "The outer edge is cracked.",
+  "proofImages": ["https://example.com/proof-1.jpg"]
+}
+```
+
+The order must belong to the user and have status `Delivered`. `proofImages` accepts up to five image URL strings. Only one return request is allowed per user/order/product combination.
+
 ## Admin API collection
 
 Use an Admin access token in the Bearer header.
@@ -247,6 +324,7 @@ Use an Admin access token in the Bearer header.
 | GET | `/admin/all-users?search=&role=all&status=all` | Optional filters |
 | PUT | `/admin/block/:id` | None |
 | PUT | `/admin/unblock/:id` | None |
+| GET | `/admin/login-activities?page=1&limit=10&status=all&search=&from=&to=` | Optional pagination, status, search, and date filters |
 
 ### Products
 
@@ -357,6 +435,61 @@ Policy payload:
 }
 ```
 
+### Analytics and returns
+
+| Method | Endpoint | Input |
+| --- | --- | --- |
+| GET | `/admin/analytics/page-views` | None |
+| GET | `/admin/returns?page=1&limit=10&status=all&search=` | Optional filters |
+| PATCH | `/admin/returns/:id/status` | Return status update JSON |
+
+```json
+{
+  "status": "approved",
+  "adminNote": "Return approved"
+}
+```
+
+For `pickup_scheduled`, optionally include `pickupScheduledAt`. Valid transitions are enforced by the API across `pending`, `approved`, `pickup_scheduled`, `received`, `refunded`, and `rejected`.
+
+### Homepage settings
+
+The former `/homepage` URLs remain compatibility aliases.
+
+| Method | Endpoint | Input |
+| --- | --- | --- |
+| GET | `/admin/homepage/settings` | None |
+| PUT | `/admin/homepage/Update-settings` | Homepage settings JSON |
+
+```json
+{
+  "bestsellerCategoryId": "<category-id>",
+  "backgroundColor": "#ffffff"
+}
+```
+
+Send an empty `bestsellerCategoryId` to remove the selected category. The current update path is case-sensitive and contains uppercase `Update-settings`.
+
+### Referral administration
+
+The former `/referral/admin/*` URLs remain compatibility aliases.
+
+| Method | Endpoint | Input |
+| --- | --- | --- |
+| GET | `/admin/referrals/settings` | None |
+| PUT | `/admin/referrals/settings` | Reward settings JSON |
+| GET | `/admin/referrals/stats` | None |
+| GET | `/admin/referrals/details` | None |
+| DELETE | `/admin/referrals/referrer/:id` | User ID |
+| DELETE | `/admin/referrals/discount/:id` | Coupon document ID |
+
+```json
+{
+  "signupDiscountAmount": 150,
+  "referrerRewardAmount": 100
+}
+```
+
 ## Common HTTP responses
 
 - `200`: successful read/update/delete.
@@ -367,6 +500,6 @@ Policy payload:
 - `404`: resource not found.
 - `500`: server/database/provider error.
 
-## Missing modules
+## Image storage
 
-Return and Login Activity endpoints are not implemented in the current source code, so they are intentionally absent from this collection.
+Set `IMAGE_STORAGE_PROVIDER` to `local`, `cloudinary`, or `s3`. The required provider credentials are listed in `.env.example`. Existing deployments that only set `USE_CLOUDINARY=true` remain supported as a compatibility fallback.

@@ -1,1 +1,5 @@
-export { CreateCategory, UpdateCategory, DeleteCategory } from "../../services/category.service.js";
+export {
+  CreateCategory,
+  UpdateCategory,
+  DeleteCategory,
+} from "../../services/category.service.js";

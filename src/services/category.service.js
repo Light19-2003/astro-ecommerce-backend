@@ -36,6 +36,7 @@ export const CreateCategory = async (req, res) => {
       image: imageResult.image,
       localimage: imageResult.localimage,
       public_id: imageResult.public_id,
+      storageProvider: imageResult.storageProvider,
     });
 
     if (category) {
@@ -131,11 +132,16 @@ export const UpdateCategory = async (req, res) => {
         quality: 80,
       });
 
-      await deleteImageAsset(existingCategory.public_id);
+      await deleteImageAsset({
+        publicId: existingCategory.public_id,
+        localimage: existingCategory.localimage,
+        storageProvider: existingCategory.storageProvider,
+      });
 
       updateData.image = imageResult.image;
       updateData.localimage = imageResult.localimage;
       updateData.public_id = imageResult.public_id;
+      updateData.storageProvider = imageResult.storageProvider;
     }
 
     const cate = await catmodel.updateOne({ _id: cateid }, updateData);
@@ -166,7 +172,11 @@ export const DeleteCategory = async (req, res) => {
     const cateid = req.params.categoryId;
     const cate = await catmodel.findByIdAndDelete(cateid);
     if (cate) {
-      await deleteImageAsset(cate.public_id);
+      await deleteImageAsset({
+        publicId: cate.public_id,
+        localimage: cate.localimage,
+        storageProvider: cate.storageProvider,
+      });
 
       return res.status(200).json({
         message: "Category deleted successfully",

@@ -96,7 +96,7 @@ const OrderSchema = new mongoose.Schema(
 
     paymentMethod: {
       type: String,
-      enum: ["COD", "UPI", "CARD"],
+      enum: ["COD", "UPI", "CARD", "RAZORPAY"],
       default: "COD",
     },
 
@@ -144,6 +144,18 @@ const OrderSchema = new mongoose.Schema(
       min: 0,
     },
 
+    walletDiscount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    couponDiscount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     coupon: {
       type: String,
       default: null,
@@ -165,6 +177,11 @@ const OrderSchema = new mongoose.Schema(
     
     razorpaySignature: {
       type: String,
+    },
+
+    paymentVerifiedAt: {
+      type: Date,
+      default: null,
     },
   },
   {
