@@ -259,3 +259,40 @@ export const SingleFieldProfileUpdate = async (req, res) => {
     });
   }
 };
+
+export const GetReferralStats = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    if (!userId) {
+      return res.status(400).json({
+        message: "UserId is required",
+      });
+    }
+
+    const profile = await userprofile.findOne({ userid: userId });
+
+    if (!profile) {
+      return res.status(404).json({
+        success: false,
+        message: "Profile not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        referralCode: profile.referralCode || "",
+        totalReferrals: profile.totalReferrals || 0,
+        totalWalletCreditEarned: profile.totalWalletCreditEarned || 0,
+        walletBalance: profile.walletBalance || 0,
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
